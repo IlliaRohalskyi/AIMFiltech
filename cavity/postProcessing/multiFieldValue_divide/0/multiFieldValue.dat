@@ -1,0 +1,26 @@
+# Group0          
+#   - multiFieldValue_divide:movingWallEpsilon:areaAverage(movingWall,epsilon)
+#   - multiFieldValue_divide:fixedWallsEpsilon:areaAverage(fixedWalls,epsilon)
+#   - multiFieldValue_divide:averageEpsilon:average(epsilon)Mean
+# Operation       : divide
+# Time            	Group0            
+0.5               	4.7944568545e+03
+1                 	5.3222817220e+03
+1.5               	5.4694316579e+03
+2                 	5.1508656268e+03
+2.5               	4.4272230191e+03
+3                 	1.2166773695e+03
+3.5               	1.1244008225e+03
+4                 	1.1229099991e+03
+4.5               	1.1559893664e+03
+5                 	1.2072299150e+03
+5.5               	1.2692542363e+03
+6                 	1.3381722146e+03
+6.5               	1.4117485115e+03
+7                 	1.4886092853e+03
+7.5               	1.5678705435e+03
+8                 	1.6489377413e+03
+8.5               	1.7313981673e+03
+9                 	1.8149554929e+03
+9.5               	1.8993916772e+03
+10                	1.9845447841e+03
