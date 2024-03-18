@@ -1,1 +1,6 @@
+-e .
 PyFoam
+black
+isort
+pyyaml
+pylint

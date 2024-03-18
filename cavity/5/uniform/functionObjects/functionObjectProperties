@@ -1,0 +1,531 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2312                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    arch        "LSB;label=32;scalar=64";
+    class       dictionary;
+    location    "5/uniform/functionObjects";
+    object      functionObjectProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+multiFieldValue_add:averageEpsilon
+{
+    average(epsilon)
+    {
+        totalTime       0.05;
+    }
+}
+
+multiFieldValue_sum:averageEpsilon
+{
+    average(epsilon)
+    {
+        totalTime       0.05;
+    }
+}
+
+multiFieldValue_subtract:averageEpsilon
+{
+    average(epsilon)
+    {
+        totalTime       0.05;
+    }
+}
+
+multiFieldValue_min:averageEpsilon
+{
+    average(epsilon)
+    {
+        totalTime       0.05;
+    }
+}
+
+multiFieldValue_max:averageEpsilon
+{
+    average(epsilon)
+    {
+        totalTime       0.05;
+    }
+}
+
+multiFieldValue_average:averageEpsilon
+{
+    average(epsilon)
+    {
+        totalTime       0.05;
+    }
+}
+
+multiFieldValue_divide:averageEpsilon
+{
+    average(epsilon)
+    {
+        totalTime       0.05;
+    }
+}
+
+multiFieldValue_cmptDivide:averageEpsilon
+{
+    average(epsilon)
+    {
+        totalTime       0.05;
+    }
+}
+
+valueAverage1
+{
+    momentum_x
+    {
+        windowTimes     200 ( 1 0.995 0.99 0.985 0.98 0.975 0.97 0.965 0.96 0.955 0.95 0.945 0.9399999999999999 0.9350000000000001 0.93 0.925 0.92 0.915 0.91 0.905 0.9 0.895 0.89 0.885 0.88 0.875 0.87 0.865 0.86 0.855 0.85 0.845 0.84 0.835 0.83 0.825 0.82 0.8149999999999999 0.8100000000000001 0.805 0.8 0.795 0.79 0.785 0.78 0.775 0.77 0.765 0.76 0.755 0.75 0.745 0.74 0.735 0.73 0.725 0.72 0.715 0.71 0.705 0.7 0.695 0.6899999999999999 0.6850000000000001 0.68 0.675 0.67 0.665 0.66 0.655 0.65 0.645 0.64 0.635 0.63 0.625 0.62 0.615 0.61 0.605 0.6 0.595 0.59 0.585 0.58 0.575 0.57 0.5649999999999999 0.5600000000000001 0.555 0.55 0.545 0.54 0.535 0.53 0.525 0.52 0.515 0.51 0.505 0.5 0.495 0.49 0.485 0.48 0.475 0.47 0.465 0.46 0.455 0.45 0.445 0.44 0.435 0.43 0.425 0.42 0.415 0.41 0.405 0.4 0.395 0.39 0.385 0.38 0.375 0.37 0.365 0.36 0.355 0.35 0.345 0.34 0.335 0.33 0.325 0.32 0.315 0.31 0.305 0.3 0.295 0.29 0.285 0.28 0.275 0.27 0.265 0.26 0.255 0.25 0.245 0.24 0.235 0.23 0.225 0.22 0.215 0.21 0.205 0.2 0.195 0.19 0.185 0.18 0.175 0.17 0.165 0.16 0.155 0.15 0.145 0.14 0.135 0.13 0.125 0.12 0.115 0.11 0.105 0.1 0.095 0.09 0.08500000000000001 0.08 0.075 0.07000000000000001 0.065 0.06 0.055 0.05 0.045 0.04 0.035 0.03 0.025 0.02 0.015 0.01 0.005 );
+        windowValues    200 ( -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 -0.0001 );
+        totalTime       4.999999999999916;
+    }
+    momentum_y
+    {
+        windowTimes     200 ( 1 0.995 0.99 0.985 0.98 0.975 0.97 0.965 0.96 0.955 0.95 0.945 0.9399999999999999 0.9350000000000001 0.93 0.925 0.92 0.915 0.91 0.905 0.9 0.895 0.89 0.885 0.88 0.875 0.87 0.865 0.86 0.855 0.85 0.845 0.84 0.835 0.83 0.825 0.82 0.8149999999999999 0.8100000000000001 0.805 0.8 0.795 0.79 0.785 0.78 0.775 0.77 0.765 0.76 0.755 0.75 0.745 0.74 0.735 0.73 0.725 0.72 0.715 0.71 0.705 0.7 0.695 0.6899999999999999 0.6850000000000001 0.68 0.675 0.67 0.665 0.66 0.655 0.65 0.645 0.64 0.635 0.63 0.625 0.62 0.615 0.61 0.605 0.6 0.595 0.59 0.585 0.58 0.575 0.57 0.5649999999999999 0.5600000000000001 0.555 0.55 0.545 0.54 0.535 0.53 0.525 0.52 0.515 0.51 0.505 0.5 0.495 0.49 0.485 0.48 0.475 0.47 0.465 0.46 0.455 0.45 0.445 0.44 0.435 0.43 0.425 0.42 0.415 0.41 0.405 0.4 0.395 0.39 0.385 0.38 0.375 0.37 0.365 0.36 0.355 0.35 0.345 0.34 0.335 0.33 0.325 0.32 0.315 0.31 0.305 0.3 0.295 0.29 0.285 0.28 0.275 0.27 0.265 0.26 0.255 0.25 0.245 0.24 0.235 0.23 0.225 0.22 0.215 0.21 0.205 0.2 0.195 0.19 0.185 0.18 0.175 0.17 0.165 0.16 0.155 0.15 0.145 0.14 0.135 0.13 0.125 0.12 0.115 0.11 0.105 0.1 0.095 0.09 0.08500000000000001 0.08 0.075 0.07000000000000001 0.065 0.06 0.055 0.05 0.045 0.04 0.035 0.03 0.025 0.02 0.015 0.01 0.005 );
+        windowValues    200 ( -1.00349e-16 -9.112339999999999e-17 -8.206070000000001e-17 -7.34088e-17 -6.56356e-17 -5.82224e-17 -5.13341e-17 -4.44314e-17 -3.80575e-17 -3.19538e-17 -2.62859e-17 -2.09417e-17 -1.56959e-17 -1.07789e-17 -6.1385e-18 -1.83823e-18 2.13898e-18 5.97194e-18 9.92739e-18 1.34524e-17 1.68706e-17 2.00395e-17 2.31175e-17 2.60161e-17 2.85193e-17 3.08938e-17 3.30899e-17 3.52711e-17 3.72427e-17 3.90935e-17 4.0772e-17 4.22659e-17 4.37346e-17 4.50576e-17 4.62686e-17 4.73777e-17 4.84641e-17 4.96377e-17 5.06419e-17 5.16249e-17 5.25287e-17 5.32992e-17 5.38836e-17 5.44871e-17 5.49858e-17 5.54526e-17 5.57722e-17 5.61161e-17 5.63739e-17 5.659159999999999e-17 5.67621e-17 5.688250000000001e-17 5.70676e-17 5.71832e-17 5.72753e-17 5.727299999999999e-17 5.718789999999999e-17 5.71392e-17 5.70498e-17 5.69527e-17 5.68288e-17 5.66694e-17 5.65455e-17 5.63696e-17 5.61352e-17 5.58999e-17 5.56025e-17 5.53538e-17 5.51009e-17 5.48208e-17 5.45343e-17 5.42678e-17 5.40185e-17 5.37254e-17 5.34159e-17 5.31063e-17 5.27543e-17 5.24018e-17 5.20296e-17 5.16599e-17 5.12943e-17 5.08874e-17 5.04986e-17 5.00963e-17 4.96936e-17 4.92996e-17 4.8876e-17 4.84636e-17 4.80441e-17 4.76223e-17 4.72123e-17 4.67792e-17 4.6345e-17 4.59113e-17 4.54781e-17 4.50567e-17 4.46201e-17 4.41844e-17 4.37464e-17 4.33154e-17 4.28997e-17 4.24596e-17 4.20294e-17 4.15931e-17 4.11666e-17 4.07465e-17 4.03143e-17 3.9891e-17 3.94597e-17 3.90392e-17 3.86273e-17 3.82022e-17 3.77851e-17 3.73676e-17 3.69499e-17 3.65489e-17 3.61318e-17 3.57229e-17 3.53161e-17 3.4915e-17 3.45175e-17 3.41123e-17 3.37178e-17 3.33225e-17 3.29279e-17 3.25478e-17 3.21596e-17 3.1774e-17 3.1391e-17 3.10115e-17 3.06404e-17 3.02652e-17 2.98929e-17 2.95228e-17 2.9158e-17 2.88043e-17 2.84362e-17 2.80792e-17 2.77264e-17 2.73755e-17 2.70367e-17 2.66911e-17 2.63483e-17 2.60114e-17 2.56809e-17 2.53586e-17 2.50277e-17 2.47073e-17 2.43818e-17 2.40727e-17 2.37671e-17 2.34581e-17 2.31524e-17 2.28468e-17 2.25477e-17 2.22599e-17 2.19604e-17 2.16767e-17 2.13905e-17 2.11047e-17 2.083e-17 2.05448e-17 2.02712e-17 1.99979e-17 1.973e-17 1.9463e-17 1.91995e-17 1.8937e-17 1.86758e-17 1.84161e-17 1.81663e-17 1.79071e-17 1.76599e-17 1.74139e-17 1.71678e-17 1.69285e-17 1.66917e-17 1.64559e-17 1.62155e-17 1.59854e-17 1.57622e-17 1.55359e-17 1.53146e-17 1.50921e-17 1.48771e-17 1.46659e-17 1.44533e-17 1.42499e-17 1.40465e-17 1.3842e-17 1.36517e-17 1.34494e-17 1.32619e-17 1.30767e-17 1.28899e-17 1.27027e-17 1.25253e-17 1.2343e-17 1.21692e-17 1.19951e-17 );
+        totalTime       4.999999999999916;
+    }
+    momentum_z
+    {
+        windowTimes     200 ( 1 0.995 0.99 0.985 0.98 0.975 0.97 0.965 0.96 0.955 0.95 0.945 0.9399999999999999 0.9350000000000001 0.93 0.925 0.92 0.915 0.91 0.905 0.9 0.895 0.89 0.885 0.88 0.875 0.87 0.865 0.86 0.855 0.85 0.845 0.84 0.835 0.83 0.825 0.82 0.8149999999999999 0.8100000000000001 0.805 0.8 0.795 0.79 0.785 0.78 0.775 0.77 0.765 0.76 0.755 0.75 0.745 0.74 0.735 0.73 0.725 0.72 0.715 0.71 0.705 0.7 0.695 0.6899999999999999 0.6850000000000001 0.68 0.675 0.67 0.665 0.66 0.655 0.65 0.645 0.64 0.635 0.63 0.625 0.62 0.615 0.61 0.605 0.6 0.595 0.59 0.585 0.58 0.575 0.57 0.5649999999999999 0.5600000000000001 0.555 0.55 0.545 0.54 0.535 0.53 0.525 0.52 0.515 0.51 0.505 0.5 0.495 0.49 0.485 0.48 0.475 0.47 0.465 0.46 0.455 0.45 0.445 0.44 0.435 0.43 0.425 0.42 0.415 0.41 0.405 0.4 0.395 0.39 0.385 0.38 0.375 0.37 0.365 0.36 0.355 0.35 0.345 0.34 0.335 0.33 0.325 0.32 0.315 0.31 0.305 0.3 0.295 0.29 0.285 0.28 0.275 0.27 0.265 0.26 0.255 0.25 0.245 0.24 0.235 0.23 0.225 0.22 0.215 0.21 0.205 0.2 0.195 0.19 0.185 0.18 0.175 0.17 0.165 0.16 0.155 0.15 0.145 0.14 0.135 0.13 0.125 0.12 0.115 0.11 0.105 0.1 0.095 0.09 0.08500000000000001 0.08 0.075 0.07000000000000001 0.065 0.06 0.055 0.05 0.045 0.04 0.035 0.03 0.025 0.02 0.015 0.01 0.005 );
+        windowValues    200 ( 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 );
+        totalTime       4.999999999999916;
+    }
+}
+
+cdf7e925f5746741c316f5fbcf39ad0dfca90775
+{
+    sampleEpsilon1
+    {
+        scalar
+        {
+            average(cloud,epsilon) 1.599481817907067e-05;
+            min(cloud,epsilon) 1.599481817907067e-05;
+            max(cloud,epsilon) 1.599481817907067e-05;
+            average(epsilon) 1.599481817907067e-05;
+            min(epsilon)    1.599481817907067e-05;
+            max(epsilon)    1.599481817907067e-05;
+        }
+        label
+        {
+            size(cloud,epsilon) 1;
+            size(epsilon)   1;
+        }
+    }
+    momentum1
+    {
+        scalar
+        {
+            momentum_x      -0.0001000000000000028;
+            momentum_y      1.199508146116232e-17;
+            momentum_z      0;
+            momentum_r      -0.0001000000000000028;
+            momentum_rtheta 1.199508146116232e-17;
+            momentum_axis   0;
+        }
+    }
+    valueAverage1
+    {
+        scalar
+        {
+            momentum_xMean  -9.999999999999897e-05;
+            momentum_yMean  2.872377030730583e-17;
+            momentum_zMean  0;
+        }
+    }
+    solverInfo1
+    {
+        scalar
+        {
+            Ux_initial      0.0067973;
+            Ux_final        4.57987e-05;
+            Uy_initial      0.00744297;
+            Uy_final        2.25947e-06;
+            epsilon_initial 0.0169914;
+            epsilon_final   9.97093e-06;
+            k_initial       0.0230112;
+            k_final         9.759169999999999e-06;
+            p_initial       0.00696868;
+            p_final         0.000617553;
+        }
+        label
+        {
+            Ux_iters        1000;
+            Uy_iters        4;
+            epsilon_iters   41;
+            k_iters         39;
+            p_iters         1;
+        }
+    }
+    continuityError1
+    {
+        scalar
+        {
+            local           6.183463628410532e-17;
+            global          -4.807483259977605e-18;
+            cumulative      -6.831616366122569e-18;
+        }
+    }
+    multiFieldValue_add:movingWallEpsilon
+    {
+        scalar
+        {
+            areaAverage(movingWall,epsilon) 1.725228910303435e-05;
+        }
+    }
+    multiFieldValue_add:fixedWallsEpsilon
+    {
+        scalar
+        {
+            areaAverage(fixedWalls,epsilon) 1.300044042112934e-05;
+        }
+    }
+    multiFieldValue_add:averageEpsilon
+    {
+        scalar
+        {
+            average(epsilon)Mean 0.001099255565537057;
+        }
+    }
+    multiFieldValue_add
+    {
+        scalar
+        {
+            add(areaAverage(movingWall,epsilon),areaAverage(fixedWalls,epsilon),average(epsilon)Mean) 0.00112950829506122;
+        }
+    }
+    multiFieldValue_sum:movingWallEpsilon
+    {
+        scalar
+        {
+            areaAverage(movingWall,epsilon) 1.725228910303435e-05;
+        }
+    }
+    multiFieldValue_sum:fixedWallsEpsilon
+    {
+        scalar
+        {
+            areaAverage(fixedWalls,epsilon) 1.300044042112934e-05;
+        }
+    }
+    multiFieldValue_sum:averageEpsilon
+    {
+        scalar
+        {
+            average(epsilon)Mean 0.001099255565537057;
+        }
+    }
+    multiFieldValue_sum
+    {
+        scalar
+        {
+            sum(areaAverage(movingWall,epsilon),areaAverage(fixedWalls,epsilon),average(epsilon)Mean) 0.00112950829506122;
+        }
+    }
+    multiFieldValue_subtract:movingWallEpsilon
+    {
+        scalar
+        {
+            areaAverage(movingWall,epsilon) 1.725228910303435e-05;
+        }
+    }
+    multiFieldValue_subtract:fixedWallsEpsilon
+    {
+        scalar
+        {
+            areaAverage(fixedWalls,epsilon) 1.300044042112934e-05;
+        }
+    }
+    multiFieldValue_subtract:averageEpsilon
+    {
+        scalar
+        {
+            average(epsilon)Mean 0.001099255565537057;
+        }
+    }
+    multiFieldValue_subtract
+    {
+        scalar
+        {
+            subtract(areaAverage(movingWall,epsilon),areaAverage(fixedWalls,epsilon),average(epsilon)Mean) -0.001095003716855152;
+        }
+    }
+    multiFieldValue_min:movingWallEpsilon
+    {
+        scalar
+        {
+            areaAverage(movingWall,epsilon) 1.725228910303435e-05;
+        }
+    }
+    multiFieldValue_min:fixedWallsEpsilon
+    {
+        scalar
+        {
+            areaAverage(fixedWalls,epsilon) 1.300044042112934e-05;
+        }
+    }
+    multiFieldValue_min:averageEpsilon
+    {
+        scalar
+        {
+            average(epsilon)Mean 0.001099255565537057;
+        }
+    }
+    multiFieldValue_min
+    {
+        scalar
+        {
+            min(areaAverage(movingWall,epsilon),areaAverage(fixedWalls,epsilon),average(epsilon)Mean) 1.300044042112934e-05;
+        }
+    }
+    multiFieldValue_max:movingWallEpsilon
+    {
+        scalar
+        {
+            areaAverage(movingWall,epsilon) 1.725228910303435e-05;
+        }
+    }
+    multiFieldValue_max:fixedWallsEpsilon
+    {
+        scalar
+        {
+            areaAverage(fixedWalls,epsilon) 1.300044042112934e-05;
+        }
+    }
+    multiFieldValue_max:averageEpsilon
+    {
+        scalar
+        {
+            average(epsilon)Mean 0.001099255565537057;
+        }
+    }
+    multiFieldValue_max
+    {
+        scalar
+        {
+            max(areaAverage(movingWall,epsilon),areaAverage(fixedWalls,epsilon),average(epsilon)Mean) 0.001099255565537057;
+        }
+    }
+    multiFieldValue_average:movingWallEpsilon
+    {
+        scalar
+        {
+            areaAverage(movingWall,epsilon) 1.725228910303435e-05;
+        }
+    }
+    multiFieldValue_average:fixedWallsEpsilon
+    {
+        scalar
+        {
+            areaAverage(fixedWalls,epsilon) 1.300044042112934e-05;
+        }
+    }
+    multiFieldValue_average:averageEpsilon
+    {
+        scalar
+        {
+            average(epsilon)Mean 0.001099255565537057;
+        }
+    }
+    multiFieldValue_average
+    {
+        scalar
+        {
+            average(areaAverage(movingWall,epsilon),areaAverage(fixedWalls,epsilon),average(epsilon)Mean) 0.0003765027650204068;
+        }
+    }
+    multiFieldValue_divide:movingWallEpsilon
+    {
+        scalar
+        {
+            areaAverage(movingWall,epsilon) 1.725228910303435e-05;
+        }
+    }
+    multiFieldValue_divide:fixedWallsEpsilon
+    {
+        scalar
+        {
+            areaAverage(fixedWalls,epsilon) 1.300044042112934e-05;
+        }
+    }
+    multiFieldValue_divide:averageEpsilon
+    {
+        scalar
+        {
+            average(epsilon)Mean 0.001099255565537057;
+        }
+    }
+    multiFieldValue_divide
+    {
+        scalar
+        {
+            divide(areaAverage(movingWall,epsilon),areaAverage(fixedWalls,epsilon),average(epsilon)Mean) 1207.229915047256;
+        }
+    }
+    multiFieldValue_cmptDivide:movingWallEpsilon
+    {
+        scalar
+        {
+            areaAverage(movingWall,epsilon) 1.725228910303435e-05;
+        }
+    }
+    multiFieldValue_cmptDivide:fixedWallsEpsilon
+    {
+        scalar
+        {
+            areaAverage(fixedWalls,epsilon) 1.300044042112934e-05;
+        }
+    }
+    multiFieldValue_cmptDivide:averageEpsilon
+    {
+        scalar
+        {
+            average(epsilon)Mean 0.001099255565537057;
+        }
+    }
+    multiFieldValue_cmptDivide
+    {
+        scalar
+        {
+            cmptDivide(areaAverage(movingWall,epsilon),areaAverage(fixedWalls,epsilon),average(epsilon)Mean) 1207.229915047256;
+        }
+    }
+    volFieldValue1_min_none
+    {
+        scalar
+        {
+            min(p)          0;
+        }
+        vector
+        {
+            min(U)          ( -1 0 0 );
+        }
+    }
+    volFieldValue1_max_none
+    {
+        scalar
+        {
+            max(p)          1.153775802211611e-12;
+        }
+        vector
+        {
+            max(U)          ( -1 0 0 );
+        }
+    }
+    volFieldValue1_sum_none
+    {
+        scalar
+        {
+            sum(p)          7.352874049032193e-12;
+        }
+        vector
+        {
+            sum(U)          ( -400 0 0 );
+        }
+    }
+    volFieldValue1_sumMag_none
+    {
+        scalar
+        {
+            sumMag(p)       7.352874049032193e-12;
+        }
+        vector
+        {
+            sumMag(U)       ( 400 0 0 );
+        }
+    }
+    volFieldValue1_average_none
+    {
+        scalar
+        {
+            average(p)      1.838218512258048e-14;
+        }
+        vector
+        {
+            average(U)      ( -1 0 0 );
+        }
+    }
+    volFieldValue1_volAverage_none
+    {
+        scalar
+        {
+            volAverage(p)   1.838218512258036e-14;
+        }
+        vector
+        {
+            volAverage(U)   ( -1 0 0 );
+        }
+    }
+    volFieldValue1_volIntegrate_none
+    {
+        scalar
+        {
+            volIntegrate(p) 1.838218512258049e-18;
+        }
+        vector
+        {
+            volIntegrate(U) ( -0.0001 0 0 );
+        }
+    }
+    volFieldValue1_CoV_none
+    {
+        scalar
+        {
+            CoV(p)          6.365242122476997;
+        }
+        vector
+        {
+            CoV(U)          ( 0 0 0 );
+        }
+    }
+}
+
+sampleEpsilon1
+{
+    epsilon
+    {
+        file            "<case>/postProcessing/sampleEpsilon1/5/cloud_epsilon.xy";
+    }
+}
+
+fieldAverage1
+{
+    U
+    {
+        totalIter       1000;
+        totalTime       4.999999999999916;
+    }
+}
+
+continuityError1
+{
+    cumulative      -6.831616366122569e-18;
+}
+
+streamLine1
+{
+    U
+    {
+        file            "<case>/postProcessing/sets/streamLine1/5/track0.vtp";
+    }
+    k
+    {
+        file            "<case>/postProcessing/sets/streamLine1/5/track0.vtp";
+    }
+    p
+    {
+        file            "<case>/postProcessing/sets/streamLine1/5/track0.vtp";
+    }
+}
+
+
+// ************************************************************************* //
