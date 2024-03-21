@@ -1,0 +1,8 @@
+case_name: cavity
+solver_name: pisoFoam
+read_dat_paths:
+  - cavity/postProcessing/multiFieldValue_max/0
+read_skiprows: 5
+replace_col_name: Group0
+data_folder: openfoam_data
+file_name: openfoam_data.csv
