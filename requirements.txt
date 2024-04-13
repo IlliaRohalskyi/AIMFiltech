@@ -2,6 +2,7 @@
 PyFoam
 black
 isort
+pandas
 prefect
 pytest
 pyyaml
