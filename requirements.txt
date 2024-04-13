@@ -2,5 +2,7 @@
 PyFoam
 black
 isort
+prefect
+pytest
 pyyaml
 pylint

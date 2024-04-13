@@ -5,5 +5,5 @@ read_dat_paths:
 
 read_skiprows: 5
 replace_col_name: Group0
-data_folder: openfoam_data
-file_name: openfoam_data.csv
+data_folder: test_data
+file_name: test.csv

@@ -47,7 +47,9 @@ class OpenfoamHandler:
             df = pd.read_csv(
                 os.path.join(get_root(), dat_path), delimiter="\t", skiprows=skiprows
             )
-            value_name = os.path.splitext(os.path.basename(dat_path))[0]
+            print(os.path.splitext(os.path.basename(dat_path)))
+            split_path = dat_path.split("/")
+            value_name = split_path[split_path.index("postProcessing") + 1]
             dat_dataframes[value_name] = df
         return dat_dataframes
 
