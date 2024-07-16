@@ -4,11 +4,11 @@ This module defines the OpenFOAM ETL pipeline using Prefect tasks.
 
 from prefect import flow, task
 
-from src.components.openfoam_handler import OpenfoamHandler
+from src.components.openfoam_handler import OpenFoamHandler
 
 
 @task(name="Extract Data")
-def extract(openfoam_handler: OpenfoamHandler):
+def extract(openfoam_handler: OpenFoamHandler):
     """
     Extracts results from OpenFOAM simulation using the provided OpenfoamHandler object.
 
@@ -22,7 +22,7 @@ def extract(openfoam_handler: OpenfoamHandler):
 
 
 @task(name="Transform Data")
-def transform(openfoam_handler: OpenfoamHandler, extracted_data):
+def transform(openfoam_handler: OpenFoamHandler, extracted_data):
     """
     Transforms the extracted results using the provided OpenfoamHandler object.
 
@@ -37,7 +37,7 @@ def transform(openfoam_handler: OpenfoamHandler, extracted_data):
 
 
 @task(name="Load Data")
-def load(openfoam_handler: OpenfoamHandler, transformed_data):
+def load(openfoam_handler: OpenFoamHandler, transformed_data):
     """
     Loads the transformed results using the provided OpenfoamHandler object.
 
@@ -53,7 +53,7 @@ def openfoam_etl_pipeline():
     """
     Defines the OpenFOAM ETL pipeline using the extract, transform, and load tasks.
     """
-    handler = OpenfoamHandler()
+    handler = OpenFoamHandler()
     extracted_data = extract(handler)
     transformed_data = transform(handler, extracted_data)
     load(handler, transformed_data)

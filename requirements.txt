@@ -2,6 +2,7 @@
 PyFoam
 black
 isort
+openpyxl
 pandas
 prefect
 pytest

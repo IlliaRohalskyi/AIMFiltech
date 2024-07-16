@@ -4,7 +4,7 @@ Integration test module for the OpenFOAM ETL pipeline.
 
 import shutil
 
-from src.components.openfoam_handler import OpenfoamHandler
+from src.components.openfoam_handler import OpenFoamHandler
 from src.utility import get_cfg
 
 
@@ -15,7 +15,7 @@ def test_integration():
     This function performs a test of the OpenFOAM ETL pipeline, including extraction,
     transformation, and loading of data.
     """
-    handler = OpenfoamHandler()
+    handler = OpenFoamHandler()
     config = get_cfg("test/integration/openfoam_etl_pipeline.yaml")
     handler.config = config
 
