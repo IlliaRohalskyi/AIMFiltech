@@ -57,10 +57,10 @@ class OpenFoamHandler:
         self.logger = get_run_logger()
         self.config = get_cfg("components/openfoam_handler.yaml")
         self.master_file_path = os.path.join(
-            get_root(), "openfoam_data", "Masterfile.xlsx"
+            get_root(), "simulation_data", "Masterfile.xlsx"
         )
         self.variant_file_path = os.path.join(
-            get_root(), "openfoam_data", "Variantfile.xlsx"
+            get_root(), "simulation_data", "Variantfile.xlsx"
         )
         self.master_params: Dict[str, Any] = {}
         self.variant_df: pd.DataFrame = pd.DataFrame()
@@ -319,7 +319,7 @@ class OpenFoamHandler:
         results_columns = [f"OUT{index}" for index in range(len(output_data[0]))]
         results_df = pd.DataFrame(output_data, columns=results_columns)
 
-        result_file_path = os.path.join(get_root(), "openfoam_data", "Resultfile.xlsx")
+        result_file_path = os.path.join(get_root(), "simulation_data", "Resultfile.xlsx")
         shutil.copy(self.variant_file_path, result_file_path)
         with pd.ExcelWriter(result_file_path, engine="openpyxl", mode="a") as writer:
             pd.concat([variants_sheet, results_df], axis=1).to_excel(
