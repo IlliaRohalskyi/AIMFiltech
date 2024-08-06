@@ -26,6 +26,7 @@ Example:
 
 import itertools
 import os
+import glob
 import random
 import shutil
 import subprocess
@@ -61,6 +62,9 @@ class OpenFoamHandler:
         )
         self.variant_file_path = os.path.join(
             get_root(), "simulation_data", "Variantfile.xlsx"
+        )
+        self.case_path = os.path.join(
+            get_root(), "openfoam_case"
         )
         self.master_params: Dict[str, Any] = {}
         self.variant_df: pd.DataFrame = pd.DataFrame()
@@ -291,6 +295,18 @@ class OpenFoamHandler:
             "Processing Variantfile completed. Results saved to Resultfile.xlsx"
         )
 
+        subprocess.run(["pyFoamClearCase.py", self.case_path], check=True)
+
+        rm_string_1 = os.path.join(self.case_path, "PyFoam*")
+        for filename in glob.glob(rm_string_1):
+            os.remove(filename)
+
+        rm_string_2 = os.path.join(self.case_path, "openfoam_case.foam")
+        try:
+            os.remove(rm_string2)
+        except OSError:
+            pass
+
     def _process_variant(self, index, variant_id, variants_dict, main_params_dict):
         self.logger.info("Processing Variant %s with ID: %s", index, variant_id)
         self.logger.info("Generating parameter file")
@@ -301,15 +317,18 @@ class OpenFoamHandler:
                 line = f"{key} {variants_dict[key][index]};\n"
                 parameter_file.write(line)
 
-        subprocess.run(["pyFoamClearCase.py", "."], check=True)
+        subprocess.run(["pyFoamClearCase.py", self.case_path], check=True)
         parameter_arg = f"--parameter-file={parameter_file_name}"
-        subprocess.run(["pyFoamPrepareCase.py", ".", parameter_arg], check=True)
+        subprocess.run(["pyFoamPrepareCase.py", self.case_path, parameter_arg], check=True)
         os.remove(parameter_file_name)
-        subprocess.run(["blockMesh"], check=True)
-        subprocess.run(["simpleFoam"], check=True)
-        output_file = main_params_dict["output_file"]
 
-        with open(output_file, encoding="utf-8") as result_file:
+        mesher = self.master_params["mesher"]
+        solver = self.master_params["solver"]
+        subprocess.run([mesher, "-case", self.case_path], check=True)
+        subprocess.run([solver, "-case", self.case_path], check=True)
+        output_file_path = self.case_path + main_params_dict["output_file"]
+
+        with open(output_file_path, encoding="utf-8") as result_file:
             for line in result_file:
                 pass
             last_line = line
