@@ -8,14 +8,6 @@ Dependencies:
     - pandas: DataFrame manipulation
     - prefect: Flow management
 
-Attributes:
-    config (dict): Configuration settings loaded from YAML file.
-    master_file_path (str): Path to the master Excel file.
-    variant_file_path (str): Path to save variant Excel file.
-    master_params (dict): Parameters extracted from the master file.
-    variant_df (pd.DataFrame): DataFrame containing generated variants.
-    master_excel (pd.ExcelFile): ExcelFile object for the master file.
-
 Example:
     from src.components.openfoam_handler import OpenFoamHandler
 
@@ -24,18 +16,18 @@ Example:
 
 """
 
+import glob
 import itertools
 import os
-import glob
 import random
 import shutil
 import subprocess
 from typing import Any, Dict, List
 
 import pandas as pd
-from prefect import flow, get_run_logger
+from prefect import get_run_logger
 
-from src.utility import get_cfg, get_root
+from src.utility import get_root
 
 
 class OpenFoamHandler:
@@ -43,9 +35,9 @@ class OpenFoamHandler:
     Class to handle OpenFOAM simulations and results processing.
 
     Attributes:
-        config (dict): Configuration settings loaded from YAML file.
         master_file_path (str): Path to the master Excel file.
         variant_file_path (str): Path to the variant Excel file.
+        case_path (str): Path to the case directory.
         master_params (dict): Parameters extracted from the master file.
         variant_df (pd.DataFrame): DataFrame containing generated variants.
         master_excel (pd.ExcelFile): ExcelFile object of the master file.
@@ -56,16 +48,13 @@ class OpenFoamHandler:
         Initialize the OpenFoamHandler class.
         """
         self.logger = get_run_logger()
-        self.config = get_cfg("components/openfoam_handler.yaml")
         self.master_file_path = os.path.join(
             get_root(), "simulation_data", "Masterfile.xlsx"
         )
         self.variant_file_path = os.path.join(
             get_root(), "simulation_data", "Variantfile.xlsx"
         )
-        self.case_path = os.path.join(
-            get_root(), "openfoam_case"
-        )
+        self.case_path = os.path.join(get_root(), "openfoam_case")
         self.master_params: Dict[str, Any] = {}
         self.variant_df: pd.DataFrame = pd.DataFrame()
         self.master_excel: pd.ExcelFile = None
@@ -303,11 +292,13 @@ class OpenFoamHandler:
 
         rm_string_2 = os.path.join(self.case_path, "openfoam_case.foam")
         try:
-            os.remove(rm_string2)
+            os.remove(rm_string_2)
         except OSError:
             pass
 
-    def _process_variant(self, index, variant_id, variants_dict, main_params_dict):
+    def _process_variant(
+        self, index, variant_id, variants_dict, main_params_dict
+    ) -> List[str]:
         self.logger.info("Processing Variant %s with ID: %s", index, variant_id)
         self.logger.info("Generating parameter file")
         parameter_file_name = f"{main_params_dict['name']}_variant_{index}.txt"
@@ -319,15 +310,19 @@ class OpenFoamHandler:
 
         subprocess.run(["pyFoamClearCase.py", self.case_path], check=True)
         parameter_arg = f"--parameter-file={parameter_file_name}"
-        subprocess.run(["pyFoamPrepareCase.py", self.case_path, parameter_arg], check=True)
+        subprocess.run(
+            ["pyFoamPrepareCase.py", self.case_path, parameter_arg], check=True
+        )
         os.remove(parameter_file_name)
 
+        self.logger.info("Running OpenFOAM simulation")
         mesher = self.master_params["mesher"]
         solver = self.master_params["solver"]
         subprocess.run([mesher, "-case", self.case_path], check=True)
         subprocess.run([solver, "-case", self.case_path], check=True)
         output_file_path = self.case_path + main_params_dict["output_file"]
 
+        self.logger.info("Simulation completed. Extracting results")
         with open(output_file_path, encoding="utf-8") as result_file:
             for line in result_file:
                 pass
@@ -335,23 +330,16 @@ class OpenFoamHandler:
             return last_line.split()
 
     def _save_results(self, variants_sheet, output_data):
+        self.logger.info("Saving results to Resultfile")
         results_columns = [f"OUT{index}" for index in range(len(output_data[0]))]
         results_df = pd.DataFrame(output_data, columns=results_columns)
 
-        result_file_path = os.path.join(get_root(), "simulation_data", "Resultfile.xlsx")
+        result_file_path = os.path.join(
+            get_root(), "simulation_data", "Resultfile.xlsx"
+        )
         shutil.copy(self.variant_file_path, result_file_path)
         with pd.ExcelWriter(result_file_path, engine="openpyxl", mode="a") as writer:
             pd.concat([variants_sheet, results_df], axis=1).to_excel(
                 writer, sheet_name="results", index=False
             )
-
-
-@flow()
-def run_openfoam_handler():
-    """Prefect flow to run the OpenFoamHandler."""
-    handler = OpenFoamHandler()
-    handler.generate_variants()
-
-
-if __name__ == "__main__":
-    run_openfoam_handler()
+            self.logger.info("Results saved successfully")
