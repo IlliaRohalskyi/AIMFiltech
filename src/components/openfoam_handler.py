@@ -370,11 +370,13 @@ class OpenFoamHandler:
                     pass
                 last_line = line
                 output_list+=last_line.split()
-                self.output_label+=[output_dict["OUTPUT_NAME"][id]]*len(last_line.split())
+                if index == 0:
+                    self.output_label+=[output_dict["OUTPUT_NAME"][id]]*len(last_line.split())
         return output_list
 
     def _save_results(self, variants_sheet, output_data):
         self.logger.info("Saving results to Resultfile")
+        print(self.output_label)
         results_columns = [f"OUT_{index}_{self.output_label[index]}" for index in range(len(output_data[0]))]
         results_df = pd.DataFrame(output_data, columns=results_columns)
 
