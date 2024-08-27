@@ -2,6 +2,8 @@
 This module defines the OpenFOAM pipeline
 """
 
+import sys
+
 from prefect import flow, task
 
 from src.components.openfoam_handler import OpenFoamHandler
@@ -28,7 +30,8 @@ def openfoam_pipeline():
     """
     Defines the OpenFOAM ETL pipeline using the extract, transform, and load tasks.
     """
-    handler = OpenFoamHandler()
+    parameters = sys.argv
+    handler = OpenFoamHandler(parameters)
     generate_variants(handler)
     process_variants_file(handler)
 

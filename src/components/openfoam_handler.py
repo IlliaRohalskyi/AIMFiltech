@@ -43,21 +43,45 @@ class OpenFoamHandler:
         master_excel (pd.ExcelFile): ExcelFile object of the master file.
     """
 
-    def __init__(self):
+    def __init__(self, parameters):
         """
         Initialize the OpenFoamHandler class.
         """
         self.logger = get_run_logger()
-        self.master_file_path = os.path.join(
-            get_root(), "simulation_data", "Masterfile.xlsx"
-        )
-        self.variant_file_path = os.path.join(
-            get_root(), "simulation_data", "Variantfile.xlsx"
-        )
-        self.case_path = os.path.join(get_root(), "openfoam_case")
+        self.mode = "normal"
+        self.keep_last = False
+        if "-test" in parameters:
+            self.mode = "test"
+        if "-keep_last" in parameters:
+            self.keep_last = True
+
+        if self.mode == "test":
+            self.master_file_path = os.path.join(
+                get_root(), "test_simulation_data", "Masterfile.xlsx"
+            )
+            self.variant_file_path = os.path.join(
+                get_root(), "test_simulation_data", "Variantfile.xlsx"
+            )
+            self.result_file_path = os.path.join(
+                get_root(), "test_simulation_data", "Resultfile.xlsx"
+            )
+            self.case_path = os.path.join(get_root(), "test_openfoam_case")
+        else:
+            self.master_file_path = os.path.join(
+                get_root(), "simulation_data", "Masterfile.xlsx"
+            )
+            self.variant_file_path = os.path.join(
+                get_root(), "simulation_data", "Variantfile.xlsx"
+            )
+            self.result_file_path = os.path.join(
+                get_root(), "simulation_data", "Resultfile.xlsx"
+            )
+            self.case_path = os.path.join(get_root(), "openfoam_case")
+
         self.master_params: Dict[str, Any] = {}
         self.variant_df: pd.DataFrame = pd.DataFrame()
         self.master_excel: pd.ExcelFile = None
+        self.output_label = []
 
     def generate_variants(self):
         """
@@ -269,12 +293,18 @@ class OpenFoamHandler:
             variant_excel.sheet_names[variant_excel.sheet_names.index("variants")]
         )
         variants_dict = variants_sheet.to_dict()
+
+        output_sheet = variant_excel.parse(
+            variant_excel.sheet_names[variant_excel.sheet_names.index("par-output")]
+        )
+        output_dict = output_sheet.to_dict()
+
         output_data = []
 
         for index, variant_id in enumerate(variants_dict["ID"]):
             output_data.append(
                 self._process_variant(
-                    index, variant_id, variants_dict, main_params_dict
+                    index, variant_id, variants_dict, main_params_dict, output_dict
                 )
             )
 
@@ -284,20 +314,27 @@ class OpenFoamHandler:
             "Processing Variantfile completed. Results saved to Resultfile.xlsx"
         )
 
-        subprocess.run(["pyFoamClearCase.py", self.case_path], check=True)
+        if not self.keep_last:
+            subprocess.run(["pyFoamClearCase.py", self.case_path], check=True)
 
-        rm_string_1 = os.path.join(self.case_path, "PyFoam*")
-        for filename in glob.glob(rm_string_1):
-            os.remove(filename)
+            rm_string_1 = os.path.join(self.case_path, "PyFoam*")
+            for filename in glob.glob(rm_string_1):
+                os.remove(filename)
 
-        rm_string_2 = os.path.join(self.case_path, "openfoam_case.foam")
-        try:
-            os.remove(rm_string_2)
-        except OSError:
-            pass
+            rm_string_2 = os.path.join(self.case_path, "openfoam_case.foam")
+            try:
+                os.remove(rm_string_2)
+            except OSError:
+                pass
+
+            rm_string_3 = os.path.join(self.case_path, "test_openfoam_case.foam")
+            try:
+                os.remove(rm_string_3)
+            except OSError:
+                pass
 
     def _process_variant(
-        self, index, variant_id, variants_dict, main_params_dict
+        self, index, variant_id, variants_dict, main_params_dict, output_dict
     ) -> List[str]:
         self.logger.info("Processing Variant %s with ID: %s", index, variant_id)
         self.logger.info("Generating parameter file")
@@ -320,25 +357,30 @@ class OpenFoamHandler:
         solver = self.master_params["solver"]
         subprocess.run([mesher, "-case", self.case_path], check=True)
         subprocess.run([solver, "-case", self.case_path], check=True)
-        output_file_path = self.case_path + main_params_dict["output_file"]
+        #output_file_path = self.case_path + main_params_dict["output_file"]
 
         self.logger.info("Simulation completed. Extracting results")
-        with open(output_file_path, encoding="utf-8") as result_file:
-            for line in result_file:
-                pass
-            last_line = line
-            return last_line.split()
+
+        output_list = []
+
+        for id in range(len(output_dict["ID"])):
+            output_file_path = self.case_path + output_dict["PATH"][id]
+            with open(output_file_path, encoding="utf-8") as result_file:
+                for line in result_file:
+                    pass
+                last_line = line
+                output_list+=last_line.split()
+                self.output_label+=[output_dict["OUTPUT_NAME"][id]]*len(last_line.split())
+        return output_list
 
     def _save_results(self, variants_sheet, output_data):
         self.logger.info("Saving results to Resultfile")
-        results_columns = [f"OUT{index}" for index in range(len(output_data[0]))]
+        results_columns = [f"OUT_{index}_{self.output_label[index]}" for index in range(len(output_data[0]))]
         results_df = pd.DataFrame(output_data, columns=results_columns)
+        print(self.output_label)
 
-        result_file_path = os.path.join(
-            get_root(), "simulation_data", "Resultfile.xlsx"
-        )
-        shutil.copy(self.variant_file_path, result_file_path)
-        with pd.ExcelWriter(result_file_path, engine="openpyxl", mode="a") as writer:
+        shutil.copy(self.variant_file_path, self.result_file_path)
+        with pd.ExcelWriter(self.result_file_path, engine="openpyxl", mode="a") as writer:
             pd.concat([variants_sheet, results_df], axis=1).to_excel(
                 writer, sheet_name="results", index=False
             )
