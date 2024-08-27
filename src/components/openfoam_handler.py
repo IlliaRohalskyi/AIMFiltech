@@ -377,7 +377,6 @@ class OpenFoamHandler:
         self.logger.info("Saving results to Resultfile")
         results_columns = [f"OUT_{index}_{self.output_label[index]}" for index in range(len(output_data[0]))]
         results_df = pd.DataFrame(output_data, columns=results_columns)
-        print(self.output_label)
 
         shutil.copy(self.variant_file_path, self.result_file_path)
         with pd.ExcelWriter(self.result_file_path, engine="openpyxl", mode="a") as writer:
