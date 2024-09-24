@@ -47,6 +47,8 @@ runTimeModifiable true;
 functions
 {
     #includeFunc streamlines;
+    
+    #includeFunc mag(U);
 
     probes
     {
@@ -65,7 +67,7 @@ functions
         // Fields to be probed
         fields
         (
-            p U
+            p U mag(U)
         );
 
         probeLocations
