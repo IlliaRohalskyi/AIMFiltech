@@ -3,8 +3,13 @@ PyFoam
 black
 isort
 openpyxl
+matplotlib
+seaborn
 pandas
 prefect
 pytest
 pyyaml
 pylint
+umap-learn
+scikit-learn
+optuna
