@@ -46,26 +46,30 @@ class OpenFoamHandler:
     def __init__(self, parameters):
         """
         Initialize the OpenFoamHandler class.
+        parameters: list. List of parameters passed to the script.
         """
         self.logger = get_run_logger()
-        self.mode = "normal"
-        self.keep_last = False
         if "-test" in parameters:
             self.mode = "test"
+        else:
+            self.mode = "normal"
+
         if "-keep_last" in parameters:
             self.keep_last = True
+        else:
+            self.keep_last = False
 
         if self.mode == "test":
             self.master_file_path = os.path.join(
-                get_root(), "test_simulation_data", "Masterfile.xlsx"
+                get_root(), "test", "test_simulation_data", "Masterfile.xlsx"
             )
             self.variant_file_path = os.path.join(
-                get_root(), "test_simulation_data", "Variantfile.xlsx"
+                get_root(), "test", "test_simulation_data", "Variantfile.xlsx"
             )
             self.result_file_path = os.path.join(
-                get_root(), "test_simulation_data", "Resultfile.xlsx"
+                get_root(), "test", "test_simulation_data", "Resultfile.xlsx"
             )
-            self.case_path = os.path.join(get_root(), "test_openfoam_case")
+            self.case_path = os.path.join(get_root(), "test", "test_openfoam_case")
         else:
             self.master_file_path = os.path.join(
                 get_root(), "simulation_data", "Masterfile.xlsx"
