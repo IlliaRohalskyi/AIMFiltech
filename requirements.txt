@@ -6,7 +6,7 @@ openpyxl
 matplotlib
 seaborn
 pandas
-prefect
+prefect==2.20.9
 pytest
 pyyaml
 pylint
