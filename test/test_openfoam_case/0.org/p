@@ -16,7 +16,11 @@ FoamFile
 
 dimensions      [0 2 -2 0 0 0 0];
 
+<<<<<<< HEAD
 internalField   uniform 15673.70169019627;
+=======
+internalField   uniform 17511.44878590206;
+>>>>>>> 6b8beb7 (Added terraform folder and file)
 
 boundaryField
 {
@@ -28,7 +32,11 @@ boundaryField
     outlet
     {
         type            fixedValue;
+<<<<<<< HEAD
         value           uniform 15673.70169019627;
+=======
+        value           uniform 17511.44878590206;
+>>>>>>> 6b8beb7 (Added terraform folder and file)
     }
 
     upperWall

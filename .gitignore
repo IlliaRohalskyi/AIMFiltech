@@ -160,4 +160,11 @@ cython_debug/
 .idea/
 simulation_data
 openfoam_case
+<<<<<<< HEAD
 data
+=======
+data
+src/notebooks
+.terraform/*
+!.terraform/main.tf
+>>>>>>> 6b8beb7 (Added terraform folder and file)

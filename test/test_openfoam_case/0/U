@@ -23,7 +23,11 @@ boundaryField
     inlet
     {
         type            fixedValue;
+<<<<<<< HEAD
         value           uniform (2.007347000063122 0 0);
+=======
+        value           uniform (2.695717239144385 0 0);
+>>>>>>> 6b8beb7 (Added terraform folder and file)
     }
 
     outlet
