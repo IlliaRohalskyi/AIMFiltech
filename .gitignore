@@ -165,6 +165,7 @@ data
 =======
 data
 src/notebooks
-.terraform/*
-!.terraform/main.tf
+terraform/*
+!terraform/*.tf
+!terraform/modules
 >>>>>>> 6b8beb7 (Added terraform folder and file)
