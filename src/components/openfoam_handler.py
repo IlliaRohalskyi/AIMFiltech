@@ -30,7 +30,7 @@ from prefect import get_run_logger
 from src.utility import get_root
 
 
-class OpenFoamHandler:
+class OpenFoamHandler:  # pylint: disable=R0902
     """
     Class to handle OpenFOAM simulations and results processing.
 
@@ -337,7 +337,7 @@ class OpenFoamHandler:
             except OSError:
                 pass
 
-    def _process_variant(
+    def _process_variant(  # pylint: disable=R0913, R0917, R0914
         self, index, variant_id, variants_dict, main_params_dict, output_dict
     ) -> List[str]:
         self.logger.info("Processing Variant %s with ID: %s", index, variant_id)
@@ -361,31 +361,38 @@ class OpenFoamHandler:
         solver = self.master_params["solver"]
         subprocess.run([mesher, "-case", self.case_path], check=True)
         subprocess.run([solver, "-case", self.case_path], check=True)
-        #output_file_path = self.case_path + main_params_dict["output_file"]
+        # output_file_path = self.case_path + main_params_dict["output_file"]
 
         self.logger.info("Simulation completed. Extracting results")
 
         output_list = []
 
-        for id in range(len(output_dict["ID"])):
-            output_file_path = self.case_path + output_dict["PATH"][id]
+        for id_value in range(len(output_dict["ID"])):
+            output_file_path = self.case_path + output_dict["PATH"][id_value]
             with open(output_file_path, encoding="utf-8") as result_file:
                 for line in result_file:
                     pass
                 last_line = line
-                output_list+=last_line.split()
+                output_list += last_line.split()
                 if index == 0:
-                    self.output_label+=[output_dict["OUTPUT_NAME"][id]]*len(last_line.split())
+                    self.output_label += [output_dict["OUTPUT_NAME"][id_value]] * len(
+                        last_line.split()
+                    )
         return output_list
 
     def _save_results(self, variants_sheet, output_data):
         self.logger.info("Saving results to Resultfile")
         print(self.output_label)
-        results_columns = [f"OUT_{index}_{self.output_label[index]}" for index in range(len(output_data[0]))]
+        results_columns = [
+            f"OUT_{index}_{self.output_label[index]}"
+            for index in range(len(output_data[0]))
+        ]
         results_df = pd.DataFrame(output_data, columns=results_columns)
 
         shutil.copy(self.variant_file_path, self.result_file_path)
-        with pd.ExcelWriter(self.result_file_path, engine="openpyxl", mode="a") as writer:
+        with pd.ExcelWriter(
+            self.result_file_path, engine="openpyxl", mode="a"
+        ) as writer:
             pd.concat([variants_sheet, results_df], axis=1).to_excel(
                 writer, sheet_name="results", index=False
             )

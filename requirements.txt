@@ -10,6 +10,8 @@ prefect==2.20.9
 pytest
 pyyaml
 pylint
+psycopg2-binary
 umap-learn
 scikit-learn
+sagemaker
 optuna
