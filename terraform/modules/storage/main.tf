@@ -10,6 +10,8 @@ resource "aws_s3_bucket" "mlflow_bucket" {
   tags = {
     Name = "MLflow Artifact Bucket"
   }
+
+  force_destroy = true
 }
 
 resource "aws_s3_bucket" "aimfiltech_training_bucket" {
@@ -24,6 +26,7 @@ resource "aws_s3_bucket" "aimfiltech_training_bucket" {
     Project     = "aimfiltech"
     Environment = "Production"
   }
+  force_destroy = true
 }
 
 # RDS instance for MLflow backend
