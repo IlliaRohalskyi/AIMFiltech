@@ -10,7 +10,7 @@ output "mlflow_server_public_ip" {
 
 output "mlflow_url" {
   description = "URL to access MLflow UI"
-  value       = "http://${module.compute.mlflow_server_public_dns}:5000"
+  value       = "https://${module.compute.mlflow_server_public_dns}"
 }
 
 output "rds_endpoint" {

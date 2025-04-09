@@ -41,28 +41,30 @@ resource "aws_route_table_association" "mlflow_public_rt_assoc" {
   route_table_id = aws_route_table.mlflow_public_rt.id
 }
 
-# EC2 Security Group
 resource "aws_security_group" "ec2_sg" {
   name        = "mlflow-ec2-sg"
   description = "Security group for MLflow EC2 instance"
   vpc_id      = aws_vpc.mlflow_vpc.id
 
+  # Allow HTTPS traffic to MLflow
   ingress {
-    from_port   = 5000
-    to_port     = 5000
+    from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] 
-    description = "Allow access to MLflow UI"
+    cidr_blocks = ["0.0.0.0/0"] # Allow HTTPS from anywhere
+    description = "Allow HTTPS traffic to MLflow UI"
   }
 
+  # Allow SSH access only from trusted IPs
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] 
-    description = "Allow SSH access"
+    cidr_blocks = ["37.4.229.184/32"]
+    description = "Allow SSH access from trusted IPs"
   }
 
+  # Allow all outbound traffic
   egress {
     from_port   = 0
     to_port     = 0
