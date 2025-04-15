@@ -1,0 +1,8 @@
+main:
+  name: Demo_v1
+  mesher: blockMesh
+  solver: simpleFoam
+
+simulation_output:
+  p: /postProcessing/probes/0/p
+  magU: /postProcessing/probes/0/mag(U)
