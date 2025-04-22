@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  pull_request:
 
 jobs:
   container:
@@ -13,18 +14,14 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.11.8'
-
-    - name: Install dependencies
-      run: pip install -r requirements.txt
-
-    - name: Run tests
+    - name: Build Docker image
       run: |
-        pytest test
+        docker build -t ci_cd .
 
-    - name: Run linting
+    - name: Run pytest in Docker container
       run: |
-        pylint src test
+        docker run --rm -v ${{ github.workspace }}:/root/app ci_cd pytest test
+
+    - name: Run pylint in Docker container
+      run: |
+        docker run --rm -v ${{ github.workspace }}:/root/app ci_cd pylint app
