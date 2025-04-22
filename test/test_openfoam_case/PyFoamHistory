@@ -1,0 +1,2 @@
+Tue Apr 22 15:30:55 2025 by illia in fedora :Application: pyFoamClearCase.py /home/illia/PycharmProjects/AIMFiltech/test/test_openfoam_case  | with cwd /home/illia/PycharmProjects/AIMFiltech  |  
+Tue Apr 22 15:30:56 2025 by illia in fedora :Application: pyFoamPrepareCase.py /home/illia/PycharmProjects/AIMFiltech/test/test_openfoam_case --parameter-file=Demo_v1_variant_0.txt  | with cwd /home/illia/PycharmProjects/AIMFiltech  |  
