@@ -13,7 +13,7 @@ from src.logger import logging
 from src.utility import get_cfg, get_root
 
 
-class OpenFoamHandler:
+class OpenFoamHandler: # pylint: disable=R0903
     """
     Class to handle OpenFOAM simulations and result processing.
     This class manages the simulation process, including
@@ -63,7 +63,7 @@ class OpenFoamHandler:
 
         return results_df
 
-    def _process_variant(self, index, row, main_params_dict, output_dict) -> dict:
+    def _process_variant(self, index, row, main_params_dict, output_dict) -> dict: #pylint: disable=R0914
         """
         Process a single simulation variant.
 
@@ -138,16 +138,3 @@ class OpenFoamHandler:
             os.remove(rm_string_3)
         except OSError:
             pass
-
-
-if __name__ == "__main__":
-    input_data = pd.DataFrame(
-        {
-            "asd": ["a", "b"],
-            "UIn": [1.0, 2.0],
-            "p": [101325, 202650],
-        }
-    )
-    handler = OpenFoamHandler(input_data)
-    results = handler.simulate()
-    print(results)
