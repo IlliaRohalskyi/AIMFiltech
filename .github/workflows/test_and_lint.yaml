@@ -20,8 +20,8 @@ jobs:
 
     - name: Run pytest in Docker container
       run: |
-        docker run --rm -v ${{ github.workspace }}:/root/app ci_cd pytest test
+        docker run --rm -v ${{ github.workspace }}:/root/app ci_cd pytest app/test
 
     - name: Run pylint in Docker container
       run: |
-        docker run --rm -v ${{ github.workspace }}:/root/app ci_cd pylint app
+        docker run --rm -v ${{ github.workspace }}:/root/app ci_cd pylint app/src app/test
