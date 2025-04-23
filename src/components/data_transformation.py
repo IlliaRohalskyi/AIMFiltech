@@ -28,7 +28,7 @@ class TrainTestData:
     feature_names: List[str]
 
 
-def transform_and_split_data(  # pylint: disable=R0914
+def transform_data(  # pylint: disable=R0914
     df: pd.DataFrame,
 ) -> TrainTestData:
     """
@@ -41,17 +41,15 @@ def transform_and_split_data(  # pylint: disable=R0914
         TrainTestData: A dataclass containing the split data and feature names.
     """
     logging.info("Starting data transformation")
-
-    df.columns = df.iloc[0]
     df = df[1:].reset_index(drop=True)
 
     expanded_data = []
 
     for i in range(0, len(df), 3):
-        feed = df.iloc[i, 2:9].values
-        permeat = df.iloc[i + 1, 2:9].values
-        retentat = df.iloc[i + 2, 2:9].values
-        sample_value = int(df.iloc[i + 2, 9])
+        feed = df.iloc[i, 2:11].values
+        permeat = df.iloc[i + 1, 2:11].values
+        retentat = df.iloc[i + 2, 2:11].values
+        sample_value = int(df.iloc[i + 2, 11])
         expanded_data.append(
             list(feed) + list(permeat) + list(retentat) + [sample_value]
         )
@@ -59,15 +57,37 @@ def transform_and_split_data(  # pylint: disable=R0914
     columns = [
         f"{label}_{col}"
         for label in ["Feed", "Permeat", "Retentat"]
-        for col in df.columns[2:9]
-    ] + ["Agglomeration class"]
+        for col in df.columns[2:11]
+    ] + [df.columns[11]]
 
     expanded_df = pd.DataFrame(expanded_data, columns=columns)
+    expanded_df.rename(
+        columns={
+            "Feed_Velocity Input Sim l/min": "UIn",
+            "Feed_Pressure Input Sim bar": "p",
+        },
+        inplace=True,
+    )
 
     logging.info("Data transformation completed successfully")
 
-    features = expanded_df.drop(columns=["Agglomeration class"])
-    target = expanded_df["Agglomeration class"]
+    return expanded_df
+
+
+def split_data(transformed_data: pd.DataFrame) -> TrainTestData:
+    """
+    Splits the transformed data into training and testing sets.
+
+    Args:
+        transformed_data (pd.DataFrame): The transformed data.
+
+    Returns:
+        TrainTestData: A dataclass containing the split data and feature names.
+    """
+    logging.info("Splitting data into training and testing sets")
+
+    features = transformed_data.drop(columns=["Agglomeration class"])
+    target = transformed_data["Agglomeration class"]
     feature_names = features.columns.tolist()
 
     logging.info("Splitting data into training and testing sets")

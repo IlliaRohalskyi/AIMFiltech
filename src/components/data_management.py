@@ -5,6 +5,7 @@ This module provides a class with methods for data management tasks.
 """
 
 import os
+import subprocess
 
 import boto3
 import pandas as pd
@@ -18,7 +19,7 @@ from src.errors.data_management_errors import (DeletionError,
                                                UnsupportedFileTypeError,
                                                WritingError)
 from src.logger import logging
-from src.utility import get_cfg
+from src.utility import get_cfg, get_root
 
 
 class DataManagement:
@@ -53,38 +54,31 @@ class DataManagement:
         Returns:
             str: Path to the supported data file
         """
-        bucket_name = self.management_config["s3_bucket_name"]
-        prefix = self.management_config["s3_prefix"]
+        dir_path = os.path.join(get_root(), "data")
 
-        response = self.s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
-        if "Contents" not in response:
-            logging.error("No files found in the S3 bucket")
-            raise UnsupportedFileTypeError(bucket_name)
+        file_list = os.listdir(dir_path)
 
-        file_list = [
-            obj["Key"]
-            for obj in response["Contents"]
-            if obj["Key"].endswith(("xls", "xlsx", "csv"))
-        ]
+        supported_file_types = ["xls", "xlsx", "csv"]
 
-        if not file_list:
-            logging.error("No supported files found in the S3 bucket")
-            raise UnsupportedFileTypeError(bucket_name)
+        supported_files = []
 
-        if len(file_list) > 1:
+        for file_name in file_list:
+            file_extension = file_name.split(".")[-1]
+            if file_extension in supported_file_types:
+                supported_files.append(os.path.join(dir_path, file_name))
+
+        if not supported_files:
+            logging.error("No supported files found in the training data folder")
+            raise UnsupportedFileTypeError(dir_path)
+
+        if len(supported_files) > 1:
             logging.error(
                 "Only one file of supported format (xlsx, xls, csv) "
-                "should exist in the S3 bucket"
+                "should exist in the training data folder"
             )
             raise MultipleFilesError
 
-        file_key = file_list[0]
-        if not os.path.exists("/tmp"):
-            os.makedirs("/tmp")
-        local_file_path = os.path.join("/tmp", os.path.basename(file_key))
-        self.s3_client.download_file(bucket_name, file_key, local_file_path)
-
-        return local_file_path
+        return supported_files[0]
 
     def initiate_data_ingestion(self) -> pd.DataFrame:
         """
@@ -101,9 +95,9 @@ class DataManagement:
         supported_file = self._get_supported_file()
 
         if supported_file.endswith("csv"):
-            data = pd.read_csv(supported_file)
+            data = pd.read_csv(supported_file, header=0)
         else:
-            data = pd.read_excel(supported_file)
+            data = pd.read_excel(supported_file, header=0)
 
         logging.info("Data ingestion completed successfully")
         return data
@@ -204,3 +198,16 @@ class DataManagement:
         finally:
             cursor.close()
             connection.close()
+
+    def load_dvc(self):
+        """
+        Loads data from a DVC remote repository.
+        This method assumes the container has access to temporary
+        AWS credentials via an IAM Role.
+        """
+        try:
+            subprocess.run(["dvc", "pull"], check=True)
+            print("Data successfully pulled from DVC remote.")
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to pull data from DVC remote: {e}")
+            raise

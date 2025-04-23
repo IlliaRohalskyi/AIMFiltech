@@ -26,4 +26,4 @@ COPY . /root/app
 
 RUN python3 -m pip install -r requirements.txt
 
-CMD ["bash", "-c", "python3 app/src/pipelines/of_pipeline.py"]
+CMD ["bash", "-c", "python3 app/src/pipelines/training_transform.py"]

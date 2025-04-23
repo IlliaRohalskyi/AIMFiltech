@@ -7,13 +7,14 @@ This module provides a class `OpenFoamHandler` to manage OpenFOAM simulations.
 import glob
 import os
 import subprocess
+
 import pandas as pd
 
 from src.logger import logging
 from src.utility import get_cfg, get_root
 
 
-class OpenFoamHandler: # pylint: disable=R0903
+class OpenFoamHandler:  # pylint: disable=R0903
     """
     Class to handle OpenFOAM simulations and result processing.
     This class manages the simulation process, including
@@ -35,35 +36,41 @@ class OpenFoamHandler: # pylint: disable=R0903
     def simulate(self) -> pd.DataFrame:
         """
         Run OpenFOAM simulations for the provided input data.
-        This method processes each row of the input DataFrame, runs the OpenFOAM simulation,
-        and appends the results as new columns to the DataFrame.
+        This method processes each row of the input DataFrame (UIn and p),
+        runs the OpenFOAM simulation, and appends the results as new columns to the DataFrame.
 
         Returns:
             pd.DataFrame: A DataFrame containing the input data along with simulation results.
         """
         logging.info("Processing simulations")
 
+        input_columns = ["UIn", "p"]
+        simulation_inputs = self.input_df[input_columns]
+        other_columns = self.input_df.drop(columns=input_columns)
+
         main_params_dict = self.config["main"]
         output_dict = self.config["simulation_output"]
 
-        results_df = self.input_df.copy()
-
-        for index, row in self.input_df.iterrows():
+        results_df = simulation_inputs.copy()
+        for index, row in simulation_inputs.iterrows():
             logging.info(f"Processing simulation for row {index}")
             result = self._process_variant(index, row, main_params_dict, output_dict)
             for key, value in result.items():
                 results_df.loc[index, key] = value
 
         logging.info(
-            "Processing simulations completed. Initiating cleanup and"
-            "saving results to a variable"
+            "Processing simulations completed. Initiating cleanup and saving results to a variable"
         )
 
         self._cleanup()
 
-        return results_df
+        final_df = pd.concat([results_df, other_columns], axis=1)
 
-    def _process_variant(self, index, row, main_params_dict, output_dict) -> dict: #pylint: disable=R0914
+        return final_df
+
+    def _process_variant( # pylint: disable=R0914
+        self, index, row, main_params_dict, output_dict
+    ) -> dict:
         """
         Process a single simulation variant.
 
@@ -87,7 +94,9 @@ class OpenFoamHandler: # pylint: disable=R0903
 
         subprocess.run(["pyFoamClearCase.py", self.case_path], check=True)
         parameter_arg = f"--parameter-file={parameter_file_name}"
-        subprocess.run(["pyFoamPrepareCase.py", self.case_path, parameter_arg], check=True)
+        subprocess.run(
+            ["pyFoamPrepareCase.py", self.case_path, parameter_arg], check=True
+        )
         os.remove(parameter_file_name)
 
         logging.info("Running OpenFOAM simulation")
