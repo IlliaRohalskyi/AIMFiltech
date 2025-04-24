@@ -19,7 +19,7 @@ from src.errors.data_management_errors import (DeletionError,
                                                UnsupportedFileTypeError,
                                                WritingError)
 from src.logger import logging
-from src.utility import get_cfg, get_root
+from src.utility import get_cfg
 
 
 class DataManagement:
@@ -54,31 +54,38 @@ class DataManagement:
         Returns:
             str: Path to the supported data file
         """
-        dir_path = os.path.join(get_root(), "data")
+        bucket_name = self.management_config["s3_bucket_name"]
+        prefix = os.path.join(self.management_config["s3_prefix"], "raw/")
 
-        file_list = os.listdir(dir_path)
+        response = self.s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
+        if "Contents" not in response:
+            logging.error("No files found in the S3 bucket")
+            raise UnsupportedFileTypeError(bucket_name)
 
-        supported_file_types = ["xls", "xlsx", "csv"]
+        file_list = [
+            obj["Key"]
+            for obj in response["Contents"]
+            if obj["Key"].endswith(("xls", "xlsx", "csv"))
+        ]
 
-        supported_files = []
+        if not file_list:
+            logging.error("No supported files found in the S3 bucket")
+            raise UnsupportedFileTypeError(bucket_name)
 
-        for file_name in file_list:
-            file_extension = file_name.split(".")[-1]
-            if file_extension in supported_file_types:
-                supported_files.append(os.path.join(dir_path, file_name))
-
-        if not supported_files:
-            logging.error("No supported files found in the training data folder")
-            raise UnsupportedFileTypeError(dir_path)
-
-        if len(supported_files) > 1:
+        if len(file_list) > 1:
             logging.error(
                 "Only one file of supported format (xlsx, xls, csv) "
-                "should exist in the training data folder"
+                "should exist in the S3 bucket"
             )
             raise MultipleFilesError
 
-        return supported_files[0]
+        file_key = file_list[0]
+        if not os.path.exists("/tmp"):
+            os.makedirs("/tmp")
+        local_file_path = os.path.join("/tmp", os.path.basename(file_key))
+        self.s3_client.download_file(bucket_name, file_key, local_file_path)
+
+        return local_file_path
 
     def initiate_data_ingestion(self) -> pd.DataFrame:
         """
@@ -210,4 +217,20 @@ class DataManagement:
             print("Data successfully pulled from DVC remote.")
         except subprocess.CalledProcessError as e:
             print(f"Failed to pull data from DVC remote: {e}")
+            raise
+    
+    def upload_excel(self, file_path: str, bucket_name: str, object_name: str):
+        """
+        Uploads an Excel file to an S3 bucket.
+
+        Args:
+            file_path (str): The path to the Excel file.
+            bucket_name (str): The name of the S3 bucket.
+            object_name (str): The name of the object in S3.
+        """
+        try:
+            self.s3_client.upload_file(file_path, bucket_name, object_name)
+            logging.info(f"File {file_path} uploaded to {bucket_name}/{object_name}")
+        except Exception as e:
+            logging.error(f"Failed to upload file: {e}")
             raise

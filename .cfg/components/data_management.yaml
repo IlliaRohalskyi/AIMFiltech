@@ -1,2 +1,2 @@
-s3_bucket_name: aimfiltech-training-bucket
+s3_bucket_name: aimfiltech-bucket
 s3_prefix: ""

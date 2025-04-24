@@ -3,9 +3,9 @@ output "mlflow_bucket_name" {
   value       = aws_s3_bucket.mlflow_bucket.bucket
 }
 
-output "training_bucket_name" {
+output "aimfiltech_bucket_name" {
   description = "Name of the training data S3 bucket"
-  value       = aws_s3_bucket.aimfiltech_training_bucket.bucket
+  value       = aws_s3_bucket.aimfiltech_bucket.bucket
 }
 
 output "rds_address" {

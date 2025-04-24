@@ -41,7 +41,7 @@ resource "aws_s3_bucket_policy" "restrict_s3_to_https_only" {
   })
 }
 
-resource "aws_s3_bucket" "aimfiltech_training_bucket" {
+resource "aws_s3_bucket" "aimfiltech_bucket" {
   bucket = "aimfiltech-bucket"
 
   tags = {
@@ -49,6 +49,30 @@ resource "aws_s3_bucket" "aimfiltech_training_bucket" {
     Environment = "Production"
   }
   force_destroy = true
+}
+
+resource "aws_s3_bucket_versioning" "enable_aimfiltech_versioning" {
+  bucket = aws_s3_bucket.aimfiltech_bucket.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# Data source to gather all files in the ../data folder
+data "local_file" "files" {
+  for_each = fileset("${path.module}/../../../data", "*")
+  filename = "${path.module}/../../../data/${each.value}"
+}
+
+# Create an S3 bucket object for each file
+resource "aws_s3_object" "add_raw_data" {
+  for_each = data.local_file.files
+
+  bucket = aws_s3_bucket.aimfiltech_bucket.id
+  key    = "raw/${basename(data.local_file.files[each.key].filename)}"
+  source = data.local_file.files[each.key].filename
+  acl    = "private"
 }
 
 # RDS instance for MLflow backend
