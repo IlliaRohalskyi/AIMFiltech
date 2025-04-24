@@ -41,7 +41,7 @@ resource "aws_s3_bucket_policy" "restrict_s3_to_https_only" {
   })
 }
 
-resource "aws_s3_bucket" "aimfiltech_training_bucket" {
+resource "aws_s3_bucket" "aimfiltech_bucket" {
   bucket = "aimfiltech-bucket"
 
   tags = {
