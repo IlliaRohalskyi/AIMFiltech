@@ -6,6 +6,7 @@ This module provides a class with methods for data management tasks.
 
 import os
 import subprocess
+from typing import Tuple
 
 import boto3
 import pandas as pd
@@ -42,17 +43,17 @@ class DataManagement:
         self.management_config = get_cfg("components/data_management.yaml")
         self.s3_client = boto3.client("s3")
 
-    def _get_supported_file(self) -> str:
+    def _get_supported_file(self) -> Tuple[str, str]:
         """
         Retrieve the supported data file from the specified S3 bucket.
 
         This method checks the S3 bucket for files with supported extensions
-        (xls, xlsx, csv) and returns the matching file.
+        (xls, xlsx, csv) and returns the matching file along with its version ID.
         If no supported files are found, an `UnsupportedFileTypeError` is raised.
         If more than one supported file is found, a `MultipleFilesError` is raised.
 
         Returns:
-            str: Path to the supported data file
+            tuple: (Path to the supported data file, Version ID of the file)
         """
         bucket_name = self.management_config["s3_bucket_name"]
         prefix = os.path.join(self.management_config["s3_prefix"], "raw/")
@@ -80,12 +81,28 @@ class DataManagement:
             raise MultipleFilesError
 
         file_key = file_list[0]
+
+        version_response = self.s3_client.list_object_versions(Bucket=bucket_name, Prefix=file_key)
+        if "Versions" not in version_response:
+            logging.error(f"No versioning information available for file: {file_key}")
+            raise Exception("Versioning is not enabled for the S3 bucket")
+
+        latest_version = next(
+            (version for version in version_response["Versions"] if version["Key"] == file_key),
+            None
+        )
+        if not latest_version:
+            logging.error(f"No version found for file: {file_key}")
+            raise Exception(f"Unable to fetch version for file: {file_key}")
+
+        version_id = latest_version["VersionId"]
+
         if not os.path.exists("/tmp"):
             os.makedirs("/tmp")
         local_file_path = os.path.join("/tmp", os.path.basename(file_key))
-        self.s3_client.download_file(bucket_name, file_key, local_file_path)
+        self.s3_client.download_file(bucket_name, file_key, local_file_path, ExtraArgs={"VersionId": version_id})
 
-        return local_file_path
+        return local_file_path, version_id
 
     def initiate_data_ingestion(self) -> pd.DataFrame:
         """
@@ -99,7 +116,8 @@ class DataManagement:
         """
         logging.info("Initiating data ingestion")
 
-        supported_file = self._get_supported_file()
+        supported_file, version_id = self._get_supported_file()
+        logging.info(f"File to ingest: {supported_file}, Version ID: {version_id}")
 
         if supported_file.endswith("csv"):
             data = pd.read_csv(supported_file, header=0)
@@ -107,7 +125,7 @@ class DataManagement:
             data = pd.read_excel(supported_file, header=0)
 
         logging.info("Data ingestion completed successfully")
-        return data
+        return data, version_id
 
     def get_sql_table(self, table_name) -> pd.DataFrame:
         """
@@ -206,31 +224,28 @@ class DataManagement:
             cursor.close()
             connection.close()
 
-    def load_dvc(self):
-        """
-        Loads data from a DVC remote repository.
-        This method assumes the container has access to temporary
-        AWS credentials via an IAM Role.
-        """
-        try:
-            subprocess.run(["dvc", "pull"], check=True)
-            print("Data successfully pulled from DVC remote.")
-        except subprocess.CalledProcessError as e:
-            print(f"Failed to pull data from DVC remote: {e}")
-            raise
     
-    def upload_excel(self, file_path: str, bucket_name: str, object_name: str):
+    def upload_excel(self, file_path: str, bucket_name: str, object_name: str, version_id: str):
         """
-        Uploads an Excel file to an S3 bucket.
+        Uploads an Excel file to an S3 bucket and tags it with the raw data version ID.
 
         Args:
             file_path (str): The path to the Excel file.
             bucket_name (str): The name of the S3 bucket.
             object_name (str): The name of the object in S3.
+            version_id (str): The version ID of the raw data to be used as a tag.
         """
         try:
             self.s3_client.upload_file(file_path, bucket_name, object_name)
-            logging.info(f"File {file_path} uploaded to {bucket_name}/{object_name}")
+
+            tagging = {"TagSet": [{"Key": "source_raw_version_id", "Value": version_id}]}
+            self.s3_client.put_object_tagging(Bucket=bucket_name, Key=object_name, Tagging=tagging)
+
+            logging.info(f"File {file_path} uploaded to {bucket_name}/{object_name} with tag source_raw_version_id={version_id}")
         except Exception as e:
-            logging.error(f"Failed to upload file: {e}")
+            logging.error(f"Failed to upload file with tagging: {e}")
             raise
+
+if __name__ == '__main__':
+    data_management = DataManagement()
+    df = data_management.initiate_data_ingestion()
