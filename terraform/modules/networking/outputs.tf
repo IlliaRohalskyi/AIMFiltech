@@ -1,6 +1,6 @@
 output "vpc_id" {
   description = "The ID of the MLflow VPC"
-  value       = aws_vpc.mlflow_vpc.id
+  value       = aws_vpc.vpc.id
 }
 
 output "public_subnet_id" {

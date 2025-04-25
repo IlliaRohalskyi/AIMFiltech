@@ -41,16 +41,6 @@ resource "aws_s3_bucket_policy" "restrict_s3_to_https_only" {
   })
 }
 
-resource "aws_s3_bucket" "aimfiltech_bucket" {
-  bucket = "aimfiltech-bucket"
-
-  tags = {
-    Project     = "aimfiltech"
-    Environment = "Production"
-  }
-  force_destroy = true
-}
-
 # RDS instance for MLflow backend
 resource "aws_db_instance" "mlflow_rds" {
   identifier           = "mlflowdb"

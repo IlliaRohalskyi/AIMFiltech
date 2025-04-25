@@ -15,10 +15,10 @@ variable "rds_instance_class" {
   description = "RDS instance class"
 }
 
-variable "s3_bucket_name" {
+variable "s3_mlflow_bucket_name" {
   type    = string
   default = "aimfiltech-mlflow"
-  description = "Name of the S3 bucket"
+  description = "Name of the MLFlow S3 bucket"
 }
 
 variable "mlflow_db_username" {
@@ -39,22 +39,13 @@ variable "key_name" {
   default = "mlflow-key"
 }
 
-variable "vpc_cidr" {
+variable "s3_bucket_name" {
+    default = "aimfiltech-bucket"
     type = string
-    description = "CIDR block for the VPC"
+    description = "Name of the S3 bucket"
 }
 
-variable "public_subnet_cidr" {
-    type = string
-    description = "CIDR block for the public subnet"
-}
-
-variable "private_subnet_cidr" {
-    type = string
-    description = "CIDR block for the private subnet"
-}
-
-variable "availability_zone" {
-    type = string
-    description = "Availability zone for the public subnet"
+variable "image_tag" {
+  type    = string
+  description = "Docker image tag"
 }

@@ -1,5 +1,5 @@
 # Main VPC
-resource "aws_vpc" "mlflow_vpc" {
+resource "aws_vpc" "vpc" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
   enable_dns_support   = true
@@ -10,7 +10,7 @@ resource "aws_vpc" "mlflow_vpc" {
 
 # Internet Gateway
 resource "aws_internet_gateway" "mlflow_igw" {
-  vpc_id = aws_vpc.mlflow_vpc.id
+  vpc_id = aws_vpc.vpc.id
   tags = {
     Name = "MLflow Internet Gateway"
   }
@@ -18,7 +18,7 @@ resource "aws_internet_gateway" "mlflow_igw" {
 
 # Public Subnet for MLflow (EC2)
 resource "aws_subnet" "mlflow_public_subnet" {
-  vpc_id                  = aws_vpc.mlflow_vpc.id
+  vpc_id                  = aws_vpc.vpc.id
   cidr_block              = "10.0.1.0/24"
   availability_zone       = "${var.aws_region}a"
   map_public_ip_on_launch = true
@@ -29,7 +29,7 @@ resource "aws_subnet" "mlflow_public_subnet" {
 
 # Private Subnet for RDS
 resource "aws_subnet" "mlflow_private_subnet_a" {
-  vpc_id            = aws_vpc.mlflow_vpc.id
+  vpc_id            = aws_vpc.vpc.id
   cidr_block        = "10.0.2.0/24"
   availability_zone = "${var.aws_region}a"
   tags = {
@@ -38,7 +38,7 @@ resource "aws_subnet" "mlflow_private_subnet_a" {
 }
 
 resource "aws_subnet" "mlflow_private_subnet_b" {
-  vpc_id           = aws_vpc.mlflow_vpc.id
+  vpc_id           = aws_vpc.vpc.id
   cidr_block       = "10.0.3.0/24"
   availability_zone = "${var.aws_region}b"
   tags = {
@@ -48,7 +48,7 @@ resource "aws_subnet" "mlflow_private_subnet_b" {
 
 # Public Route Table
 resource "aws_route_table" "mlflow_public_rt" {
-  vpc_id = aws_vpc.mlflow_vpc.id
+  vpc_id = aws_vpc.vpc.id
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.mlflow_igw.id
@@ -66,7 +66,7 @@ resource "aws_route_table_association" "mlflow_public_rt_assoc" {
 
 # Private Route Table
 resource "aws_route_table" "mlflow_private_rt" {
-  vpc_id = aws_vpc.mlflow_vpc.id
+  vpc_id = aws_vpc.vpc.id
   tags = {
     Name = "MLflow Private Route Table"
   }
@@ -87,7 +87,7 @@ resource "aws_route_table_association" "mlflow_private_rt_assoc_b" {
 resource "aws_security_group" "mlflow_ec2_sg" {
   name        = "mlflow-ec2-sg"
   description = "Security group for MLflow EC2 instance"
-  vpc_id      = aws_vpc.mlflow_vpc.id
+  vpc_id      = aws_vpc.vpc.id
 
   # Allow HTTPS traffic to MLflow
   ingress {
@@ -125,7 +125,7 @@ resource "aws_security_group" "mlflow_ec2_sg" {
 resource "aws_security_group" "mlflow_rds_sg" {
   name        = "mlflow-rds-sg"
   description = "Security group for MLflow RDS instance"
-  vpc_id      = aws_vpc.mlflow_vpc.id
+  vpc_id      = aws_vpc.vpc.id
 
   # Allow PostgreSQL access from MLflow EC2
   ingress {
@@ -156,5 +156,23 @@ resource "aws_db_subnet_group" "mlflow_db_subnet_group" {
   subnet_ids = [aws_subnet.mlflow_private_subnet_a.id, aws_subnet.mlflow_private_subnet_b.id]
   tags = {
     Name = "MLflow DB Subnet Group"
+  }
+}
+
+resource "aws_security_group" "ecs_sg" {
+  name        = "ecs-master-sg"
+  vpc_id      = aws_vpc.vpc.id
+
+  ingress {
+    from_port   = 0
+    to_port     = 65535
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 65535
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
