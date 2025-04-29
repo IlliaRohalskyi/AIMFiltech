@@ -1,18 +1,3 @@
-# Batch Compute Environment
-resource "aws_batch_compute_environment" "compute_environment" {
-  compute_environment_name = "compute-environment"
-  type                     = "MANAGED"
-
-  compute_resources {
-    type              = "FARGATE"
-    max_vcpus         = 5
-    subnets           = var.subnet_ids
-    security_group_ids = var.security_group_ids
-  }
-
-  service_role = aws_iam_role.batch_service_role.arn
-}
-
 # IAM Role for AWS Batch Service
 resource "aws_iam_role" "batch_service_role" {
   name = "batch-service-role"
@@ -79,6 +64,28 @@ resource "aws_iam_policy" "batch_service_logs_policy" {
 resource "aws_iam_role_policy_attachment" "batch_service_role_policy" {
   role       = aws_iam_role.batch_service_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
+}
+
+# Batch Compute Environment
+resource "aws_batch_compute_environment" "compute_environment" {
+  compute_environment_name = "compute-environment"
+  type                     = "MANAGED"
+
+  compute_resources {
+    type              = "FARGATE"
+    max_vcpus         = 5
+    subnets           = var.subnet_ids
+    security_group_ids = var.security_group_ids
+  }
+
+  service_role = aws_iam_role.batch_service_role.arn
+
+  depends_on = [
+    aws_iam_role.batch_service_role,
+    aws_iam_role_policy_attachment.batch_service_role_policy,
+    aws_iam_role_policy_attachment.batch_service_role_ecs_delete,
+    aws_iam_role_policy_attachment.batch_service_role_logs
+    ]
 }
 
 # Batch Job Queue
