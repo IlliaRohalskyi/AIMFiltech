@@ -30,4 +30,3 @@ docker push "$ECR_REPO:$IMAGE_TAG"
 
 echo ""
 echo "✅ Deployed! ECS is running your image: $ECR_REPO:$IMAGE_TAG"
-echo "To tear down everything, run: ./deploy.sh destroy $IMAGE_TAG"
