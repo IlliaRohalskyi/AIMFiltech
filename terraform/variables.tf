@@ -49,3 +49,9 @@ variable "image_tag" {
   type    = string
   description = "Docker image tag"
 }
+
+variable "aws_account_id" {
+  type    = string
+  description = "AWS account ID"
+  sensitive = true
+}

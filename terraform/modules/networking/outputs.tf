@@ -5,7 +5,7 @@ output "vpc_id" {
 
 output "public_subnet_id" {
   description = "The ID of the public subnet"
-  value       = aws_subnet.mlflow_public_subnet.id
+  value       = aws_subnet.public_subnet.id
 }
 
 output "db_subnet_group_name" {
@@ -21,4 +21,14 @@ output "ec2_security_group_id" {
 output "rds_security_group_id" {
   description = "The ID of the RDS security group"
   value       = aws_security_group.mlflow_rds_sg.id
+}
+
+output "private_subnet_ids" {
+  description = "List of private subnet IDs"
+  value       = [aws_subnet.private_subnet_a.id, aws_subnet.private_subnet_b.id]
+}
+
+output "batch_sg_id" {
+  description = "The ID of the Batch security group"
+  value       = aws_security_group.batch_sg.id
 }

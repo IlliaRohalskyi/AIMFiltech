@@ -66,6 +66,20 @@ module "pipelines_ecs" {
   aws_region       = var.aws_region
   s3_bucket_name     = module.pipelines_storage.s3_bucket_name
   repository_url = module.pipelines_storage.repository_url
+  aws_account_id   = var.aws_account_id
 
   depends_on = [module.pipelines_storage]
+}
+
+#6. Pipelines module: Batch
+module "pipelines_batch" {
+  source            = "./modules/pipelines/batch"
+  image_tag         = var.image_tag
+  repository_url = module.pipelines_storage.repository_url
+  subnet_ids        = module.networking.private_subnet_ids
+  security_group_ids = [module.networking.batch_sg_id]
+  aws_account_id = var.aws_account_id
+  aws_region = var.aws_region
+
+  depends_on = [module.networking, module.pipelines_storage]
 }

@@ -16,33 +16,31 @@ resource "aws_internet_gateway" "mlflow_igw" {
   }
 }
 
-# Public Subnet for MLflow (EC2)
-resource "aws_subnet" "mlflow_public_subnet" {
+resource "aws_subnet" "public_subnet" {
   vpc_id                  = aws_vpc.vpc.id
   cidr_block              = "10.0.1.0/24"
   availability_zone       = "${var.aws_region}a"
   map_public_ip_on_launch = true
   tags = {
-    Name = "MLflow Public Subnet"
+    Name = "Public Subnet"
   }
 }
 
-# Private Subnet for RDS
-resource "aws_subnet" "mlflow_private_subnet_a" {
+resource "aws_subnet" "private_subnet_a" {
   vpc_id            = aws_vpc.vpc.id
   cidr_block        = "10.0.2.0/24"
   availability_zone = "${var.aws_region}a"
   tags = {
-    Name = "MLflow Private Subnet"
+    Name = "Private Subnet"
   }
 }
 
-resource "aws_subnet" "mlflow_private_subnet_b" {
+resource "aws_subnet" "private_subnet_b" {
   vpc_id           = aws_vpc.vpc.id
   cidr_block       = "10.0.3.0/24"
   availability_zone = "${var.aws_region}b"
   tags = {
-    Name = "MLflow Private Subnet"
+    Name = "Private Subnet"
   }
 }
 
@@ -60,7 +58,7 @@ resource "aws_route_table" "mlflow_public_rt" {
 
 # Associate Public Route Table with Public Subnet
 resource "aws_route_table_association" "mlflow_public_rt_assoc" {
-  subnet_id      = aws_subnet.mlflow_public_subnet.id
+  subnet_id      = aws_subnet.public_subnet.id
   route_table_id = aws_route_table.mlflow_public_rt.id
 }
 
@@ -74,12 +72,12 @@ resource "aws_route_table" "mlflow_private_rt" {
 
 # Associate Private Route Table with Private Subnet
 resource "aws_route_table_association" "mlflow_private_rt_assoc_a" {
-  subnet_id      = aws_subnet.mlflow_private_subnet_a.id
+  subnet_id      = aws_subnet.private_subnet_a.id
   route_table_id = aws_route_table.mlflow_private_rt.id
 }
 
 resource "aws_route_table_association" "mlflow_private_rt_assoc_b" {
-  subnet_id      = aws_subnet.mlflow_private_subnet_b.id
+  subnet_id      = aws_subnet.private_subnet_b.id
   route_table_id = aws_route_table.mlflow_private_rt.id
 }
 
@@ -153,7 +151,7 @@ resource "aws_security_group" "mlflow_rds_sg" {
 # DB Subnet Group for RDS
 resource "aws_db_subnet_group" "mlflow_db_subnet_group" {
   name       = "mlflow-db-subnet-group"
-  subnet_ids = [aws_subnet.mlflow_private_subnet_a.id, aws_subnet.mlflow_private_subnet_b.id]
+  subnet_ids = [aws_subnet.private_subnet_a.id, aws_subnet.private_subnet_b.id]
   tags = {
     Name = "MLflow DB Subnet Group"
   }
@@ -173,6 +171,27 @@ resource "aws_security_group" "ecs_sg" {
     from_port   = 0
     to_port     = 65535
     protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# Security Group for AWS Batch
+resource "aws_security_group" "batch_sg" {
+  name        = "batch-sg"
+  description = "Security group for AWS Batch Compute Environment"
+  vpc_id      = aws_vpc.vpc.id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port = 0
+    to_port   = 65535
+    protocol  = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 }

@@ -83,8 +83,8 @@ data "aws_iam_policy_document" "ecs_task_policy" {
       "s3:GetObjectVersion"
     ]
     resources = [
-      "arn:aws:s3:::${var.s3_bucket_name}",
-      "arn:aws:s3:::${var.s3_bucket_name}/*"
+      "arn:aws:s3:::${var.s3_bucket_name}/processed/*",
+      "arn:aws:s3:::${var.s3_bucket_name}/raw/*"
     ]
   }
 
@@ -96,7 +96,12 @@ data "aws_iam_policy_document" "ecs_task_policy" {
       "batch:TerminateJob",
       "batch:ListJobs"
     ]
-    resources = ["*"]
+
+    resources = [
+      "arn:aws:batch:${var.aws_region}:${var.aws_account_id}:job-queue/transform-job-queue",
+      "arn:aws:batch:${var.aws_region}:${var.aws_account_id}:job-definition/training-transform-job-definition",
+      "arn:aws:batch:${var.aws_region}:${var.aws_account_id}:compute-environment/compute-environment"
+    ]
   }
 }
 
