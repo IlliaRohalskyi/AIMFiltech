@@ -17,3 +17,13 @@ output "rds_endpoint" {
   description = "RDS endpoint"
   value       = module.mlflow_storage.rds_address
 }
+
+output "lambda_ecr_repo" {
+  description = "ECR repository URL for the Lambda function"
+  value       = module.pipelines_storage.lambda_repo_url
+}
+
+output "openfoam_ecr_repo" {
+  description = "ECR repository URL for the OpenFOAM image"
+  value       = module.pipelines_storage.openfoam_repo_url
+}

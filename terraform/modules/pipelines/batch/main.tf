@@ -130,8 +130,16 @@ resource "aws_batch_job_definition" "job_definition" {
 
   container_properties = jsonencode({
     image        = "${var.repository_url}:${var.image_tag}"
-    vcpus        = 256
-    memory       = 512
+    resource_requirements = [
+      {
+        type = "VCPU"
+        value = "0.25"
+      },
+      {
+        type = "MEMORY"
+        value = "512"
+      }
+    ]
     command      = ["bash", "-c", "python3 app/src/batch_jobs/batch_worker.py"]
     executionRoleArn = aws_iam_role.execution_role.arn
   })

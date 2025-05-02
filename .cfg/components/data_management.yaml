@@ -1,2 +1,2 @@
 s3_bucket_name: aimfiltech-bucket
-s3_prefix: ""
+s3_prefix: "raw/"

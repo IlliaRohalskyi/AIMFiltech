@@ -1,8 +1,8 @@
 """
 Logging Module.
 
-Provides logging setup with timestamped log files for traceability.
-It provides a standardized way to initialize logging and start recording log entries.
+Provides logging setup with timestamped log entries for traceability.
+Logs output to the console, suitable for AWS Lambda and Docker environments.
 
 Example:
     from src.logger import logging
@@ -12,25 +12,8 @@ Example:
 """
 
 import logging
-import os
-from datetime import datetime
-
-from src.utility import get_cfg
-
-config = get_cfg("logger.yaml")
-
-LOG_FILE = f"{datetime.now().strftime('%d_%m_%Y_%H_%M_%S')}.log"
-logs_path = os.path.join(config["path"], "logs", LOG_FILE)
-os.makedirs(logs_path, exist_ok=True)
-
-LOG_FILE_PATH = os.path.join(logs_path, LOG_FILE)
 
 logging.basicConfig(
-    filename=LOG_FILE_PATH,
     format="[ %(asctime)s ] %(lineno)d %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO,
 )
-
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(logging.Formatter("[ %(asctime)s ] %(lineno)d %(name)s - %(levelname)s - %(message)s"))
-logging.getLogger().addHandler(console_handler)

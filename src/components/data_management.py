@@ -56,7 +56,7 @@ class DataManagement:
             tuple: (Path to the supported data file, Version ID of the file)
         """
         bucket_name = self.management_config["s3_bucket_name"]
-        prefix = os.path.join(self.management_config["s3_prefix"], "raw/")
+        prefix = self.management_config["s3_prefix"]
 
         response = self.s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
         if "Contents" not in response:

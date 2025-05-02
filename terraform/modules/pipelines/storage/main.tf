@@ -18,6 +18,11 @@ resource "aws_s3_object" "transform_folder" {
   key    = "processed/"
 }
 
+resource "aws_s3_object" "model_folder" {
+  bucket = aws_s3_bucket.aimfiltech_bucket.id
+  key    = "splits/"
+}
+
 resource "aws_s3_bucket_versioning" "enable_aimfiltech_versioning" {
   bucket = aws_s3_bucket.aimfiltech_bucket.id
 
@@ -26,14 +31,40 @@ resource "aws_s3_bucket_versioning" "enable_aimfiltech_versioning" {
   }
 }
 
-resource "aws_ecr_repository" "ecr_repo" {
-  name                 = "aimfiltech-ecr-repo"
+resource "aws_ecr_repository" "openfoam_ecr_repo" {
+  name                 = "openfoam-ecr-repo"
   image_tag_mutability = "IMMUTABLE"
   force_delete         = true
 }
 
-resource "aws_ecr_lifecycle_policy" "ecr_repo_policy" {
-  repository = aws_ecr_repository.ecr_repo.name
+resource "aws_ecr_repository" "lambda_ecr_repo" {
+  name                 = "lambda-ecr-repo"
+  image_tag_mutability = "IMMUTABLE"
+  force_delete         = true
+}
+resource "aws_ecr_lifecycle_policy" "openfoam_ecr_repo_policy" {
+  repository = aws_ecr_repository.openfoam_ecr_repo.name
+
+  policy = jsonencode({
+    rules = [
+      {
+        rulePriority = 1
+        description = "Retain only 5 most recent images"
+        selection    = {
+          tagStatus = "any"
+          countType = "imageCountMoreThan"
+          countNumber = 5
+        }
+        action       = {
+          type = "expire"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_ecr_lifecycle_policy" "lambda_ecr_repo_policy" {
+  repository = aws_ecr_repository.lambda_ecr_repo.name
 
   policy = jsonencode({
     rules = [

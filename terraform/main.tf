@@ -59,14 +59,12 @@ module "pipelines_storage" {
   s3_bucket_name     = var.s3_bucket_name
 }
 
-# 5. Pipelines module: ECS
-module "pipelines_ecs" {
-  source            = "./modules/pipelines/ecs"
+# 5. Pipelines module: Lambda
+module "pipelines_lambda" {
+  s3_bucket_name = module.pipelines_storage.s3_bucket_name
+  source            = "./modules/pipelines/lambda"
   image_tag         = var.image_tag
-  aws_region       = var.aws_region
-  s3_bucket_name     = module.pipelines_storage.s3_bucket_name
-  repository_url = module.pipelines_storage.repository_url
-  aws_account_id   = var.aws_account_id
+  repository_url = module.pipelines_storage.lambda_repo_url
 
   depends_on = [module.pipelines_storage]
 }
@@ -75,7 +73,7 @@ module "pipelines_ecs" {
 module "pipelines_batch" {
   source            = "./modules/pipelines/batch"
   image_tag         = var.image_tag
-  repository_url = module.pipelines_storage.repository_url
+  repository_url = module.pipelines_storage.openfoam_repo_url
   subnet_ids        = module.networking.private_subnet_ids
   security_group_ids = [module.networking.batch_sg_id]
   aws_account_id = var.aws_account_id
