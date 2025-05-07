@@ -5,20 +5,14 @@ This module provides a class with methods for data management tasks.
 """
 
 import os
-import subprocess
 from typing import Tuple
 
 import boto3
 import pandas as pd
-import psycopg2
-from sqlalchemy import create_engine
 
-from src.errors.data_management_errors import (DeletionError,
-                                               MultipleFilesError,
-                                               PostgreSQLConnectionError,
-                                               ReadingError,
-                                               UnsupportedFileTypeError,
-                                               WritingError)
+from src.errors.data_management_errors import (
+    MultipleFilesError, UnsupportedFileTypeError
+    )
 from src.logger import logging
 from src.utility import get_cfg
 
@@ -56,7 +50,7 @@ class DataManagement:
             tuple: (Path to the supported data file, Version ID of the file)
         """
         bucket_name = self.management_config["s3_bucket_name"]
-        prefix = self.management_config["s3_prefix"]
+        prefix = self.management_config["s3_ingestion_prefix"]
 
         response = self.s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
         if "Contents" not in response:
@@ -127,104 +121,42 @@ class DataManagement:
         logging.info("Data ingestion completed successfully")
         return data, version_id
 
-    def get_sql_table(self, table_name) -> pd.DataFrame:
+    def load_s3_file(self, bucket: str, key: str, version_id: str = None):
         """
-        Retrieve data from a Postgres database table.
-
-        This method triggers the retrieval of data from the database.
-
+        Loads a file from S3, optionally with a version_id. 
+        If version_id is not provided, fetches the latest version.
         Args:
-            table_name (str): The name of the table
-
+            - bucket (str): The name of the S3 bucket.
+            - key (str): The S3 object key.
+            - version_id (str, optional): The version ID of the S3 object. Defaults to None.
         Returns:
-            pandas.DataFrame: A DataFrame containing the retrieved data.
+            - If version_id is provided: pd.DataFrame
+            - If version_id is None: (pd.DataFrame, version_id)
         """
-        hostname = os.environ.get("DB_HOSTNAME")
-        database_name = os.environ.get("DB_NAME")
-        username = os.environ.get("DB_USERNAME")
-        password = os.environ.get("DB_PASSWORD")
+        if not os.path.exists("/tmp"):
+            os.makedirs("/tmp")
+        local_file_path = os.path.join("/tmp", os.path.basename(key))
 
-        try:
-            connection = psycopg2.connect(
-                host=hostname, database=database_name, user=username, password=password
+        if version_id is None:
+            version_response = self.s3_client.list_object_versions(Bucket=bucket, Prefix=key)
+            if "Versions" not in version_response:
+                raise Exception("No versioning information available for file")
+            latest_version = next(
+                (v for v in version_response["Versions"] if v["Key"] == key),
+                None
             )
+            if not latest_version:
+                raise Exception("Unable to fetch latest version for file")
+            version_id = latest_version["VersionId"]
 
-        except PostgreSQLConnectionError as e:
-            logging.error("Error connecting to PostgreSQL:", e)
-            raise e
-        query = f"SELECT * FROM {table_name};"
+        self.s3_client.download_file(bucket, key, local_file_path, ExtraArgs={"VersionId": version_id})
+        if key.endswith(".csv"):
+            df = pd.read_csv(local_file_path)
+        else:
+            df = pd.read_excel(local_file_path)
+        if version_id is not None:
+            return df, version_id if version_id is None else df
 
-        try:
-            data = pd.read_sql_query(query, connection)
-        except ReadingError as e:
-            logging.error("Error executing SQL query:", e)
-            raise e
-
-        if connection:
-            connection.close()
-        return data
-
-    def write_data(self, data, table_name):
-        """
-        Write data to a table.
-
-        Args:
-            data (pd.DataFrame): A dataframe containing the data that is to be written
-            table_name (str): The name of the table to write data to.
-        """
-        hostname = os.environ.get("DB_HOSTNAME")
-        database_name = os.environ.get("DB_NAME")
-        username = os.environ.get("DB_USERNAME")
-        password = os.environ.get("DB_PASSWORD")
-        try:
-            engine = create_engine(
-                f"postgresql://{username}:{password}@{hostname}/{database_name}"
-            )
-        except PostgreSQLConnectionError as e:
-            logging.error("Error connecting to PostgreSQL:", e)
-            raise e
-        try:
-            data.to_sql(table_name, engine, if_exists="append", index=False)
-        except WritingError as e:
-            logging.error("Error executing SQL query:", e)
-            raise e
-
-    def delete_data(self, table_name):
-        """
-        Delete data from a table.
-
-        Args:
-            table_name (str): The name of the table to be deleted
-        """
-
-        hostname = os.environ.get("DB_HOSTNAME")
-        database_name = os.environ.get("DB_NAME")
-        username = os.environ.get("DB_USERNAME")
-        password = os.environ.get("DB_PASSWORD")
-
-        try:
-            connection = psycopg2.connect(
-                host=hostname, database=database_name, user=username, password=password
-            )
-
-        except PostgreSQLConnectionError as e:
-            logging.error("Error connecting to PostgreSQL:", e)
-            raise e
-
-        cursor = connection.cursor()
-
-        delete_query = f"DELETE FROM {table_name}"
-        try:
-            cursor.execute(delete_query)
-            connection.commit()
-        except DeletionError as e:
-            logging.error("Error executing SQL query:", e)
-            raise e
-        finally:
-            cursor.close()
-            connection.close()
-
-    
     def upload_excel(self, file_path: str, bucket_name: str, object_name: str, version_id: str):
         """
         Uploads an Excel file to an S3 bucket and tags it with the raw data version ID.
@@ -245,7 +177,12 @@ class DataManagement:
         except Exception as e:
             logging.error(f"Failed to upload file with tagging: {e}")
             raise
+    
 
 if __name__ == '__main__':
     data_management = DataManagement()
-    df = data_management.initiate_data_ingestion()
+    path, version_id = data_management.load_s3_file("aimfiltech-bucket", "raw/231212_Lab data_2.xlsx")
+    print(path)
+    print("######")
+
+    print(version_id)

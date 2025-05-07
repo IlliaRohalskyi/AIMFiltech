@@ -27,3 +27,8 @@ variable "aws_account_id" {
     description = "AWS account ID"
     type        = string
 }
+
+variable "s3_bucket_name" {
+    description = "S3 bucket name for input and output data"
+    type        = string
+}

@@ -78,6 +78,21 @@ module "pipelines_batch" {
   security_group_ids = [module.networking.batch_sg_id]
   aws_account_id = var.aws_account_id
   aws_region = var.aws_region
+  s3_bucket_name = module.pipelines_storage.s3_bucket_name
 
   depends_on = [module.networking, module.pipelines_storage]
 }
+
+module "pipeline_step_function" {
+  source            = "./modules/pipelines/step_function"
+  aws_account_id = var.aws_account_id
+  aws_region = var.aws_region
+  s3_bucket_name     = module.pipelines_storage.s3_bucket_name
+  split_data_lambda_name = module.pipelines_lambda.lambda_name
+  batch_job_queue_arn = module.pipelines_batch.batch_job_queue_arn
+  batch_job_definition_arn = module.pipelines_batch.batch_job_definition_arn
+  batch_job_name = module.pipelines_batch.batch_job_name
+
+  depends_on = [module.pipelines_batch, module.pipelines_lambda]
+}
+

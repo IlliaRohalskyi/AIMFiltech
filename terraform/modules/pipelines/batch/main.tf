@@ -123,20 +123,77 @@ resource "aws_iam_role_policy_attachment" "execution_role_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+
+resource "aws_iam_policy" "execution_role_s3_policy" {
+  name   = "execution-role-s3-policy"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect: "Allow",
+        Action: [
+          "s3:ListBucket",
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:ListBucketVersions",
+          "s3:PutObjectTagging",
+          "s3:GetObjectVersion"
+        ],
+        Resource: [
+          "arn:aws:s3:::${var.s3_bucket_name}",
+          "arn:aws:s3:::${var.s3_bucket_name}/*"
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_policy" "execution_role_ecr_policy" {
+  name   = "execution-role-ecr-policy"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect: "Allow",
+        Action: [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage"
+        ],
+        Resource: "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "execution_role_ecr_policy_attachment" {
+  role       = aws_iam_role.execution_role.name
+  policy_arn = aws_iam_policy.execution_role_ecr_policy.arn
+}
+
+resource "aws_iam_role_policy_attachment" "execution_role_s3_policy_attachment" {
+  role       = aws_iam_role.execution_role.name
+  policy_arn = aws_iam_policy.execution_role_s3_policy.arn
+}
 # Batch Job Definition
 resource "aws_batch_job_definition" "job_definition" {
   name          = "training-transform-job-definition"
   type          = "container"
+  platform_capabilities = ["FARGATE"]
 
   container_properties = jsonencode({
     image        = "${var.repository_url}:${var.image_tag}"
-    resource_requirements = [
+    fargatePlatformConfiguration = {
+      platformVersion = "LATEST"
+    }
+    resourceRequirements = [
       {
-        type = "VCPU"
+        type  = "VCPU"
         value = "0.25"
       },
       {
-        type = "MEMORY"
+        type  = "MEMORY"
         value = "512"
       }
     ]

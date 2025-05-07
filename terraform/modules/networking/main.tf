@@ -157,24 +157,6 @@ resource "aws_db_subnet_group" "mlflow_db_subnet_group" {
   }
 }
 
-resource "aws_security_group" "ecs_sg" {
-  name        = "ecs-master-sg"
-  vpc_id      = aws_vpc.vpc.id
-
-  ingress {
-    from_port   = 0
-    to_port     = 65535
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  egress {
-    from_port   = 0
-    to_port     = 65535
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
 # Security Group for AWS Batch
 resource "aws_security_group" "batch_sg" {
   name        = "batch-sg"
@@ -194,4 +176,45 @@ resource "aws_security_group" "batch_sg" {
     protocol  = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+}
+
+# VPC Endpoint for ECR API
+resource "aws_vpc_endpoint" "ecr_api" {
+  vpc_id            = aws_vpc.vpc.id
+  service_name      = "com.amazonaws.${var.aws_region}.ecr.api"
+  vpc_endpoint_type = "Interface"
+  subnet_ids        = [
+    aws_subnet.private_subnet_a.id,
+    aws_subnet.private_subnet_b.id
+  ]
+  security_group_ids = [aws_security_group.batch_sg.id]
+
+  tags = {
+    Name = "ECR API Endpoint"
+  }
+}
+
+# VPC Endpoint for ECR Docker Registry
+resource "aws_vpc_endpoint" "ecr_dkr" {
+  vpc_id            = aws_vpc.vpc.id
+  service_name      = "com.amazonaws.${var.aws_region}.ecr.dkr"
+  vpc_endpoint_type = "Interface"
+  subnet_ids        = [
+    aws_subnet.private_subnet_a.id,
+    aws_subnet.private_subnet_b.id
+  ]
+  security_group_ids = [aws_security_group.batch_sg.id]
+
+  tags = {
+    Name = "ECR Docker Registry Endpoint"
+  }
+}
+
+resource "aws_security_group_rule" "allow_https_from_private_subnets" {
+  type              = "ingress"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  cidr_blocks       = ["10.0.0.0/16"] 
+  security_group_id = aws_security_group.batch_sg.id
 }
