@@ -15,19 +15,20 @@ def batch_worker():
     bucket = os.environ.get("S3_BUCKET")
     key = os.environ.get("S3_KEY")
     run_id = os.environ.get("RUN_ID")
-    job_number = os.environ.get("BATCH_JOB_INDEX")
     version_id = os.environ.get("version_id")
 
-    if not bucket or not key or not run_id or not job_number or not version_id:
-        logging.error("Missing required environment variables: S3_BUCKET, S3_KEY, RUN_ID, BATCH_JOB_INDEX or version_id")
-        Exception("Missing required environment variables")
+    if not bucket or not key or not run_id or not version_id:
+        logging.error("Missing required environment variables: S3_BUCKET, S3_KEY, RUN_ID, or version_id")
+        raise Exception("Missing required environment variables")
 
     try:
+        job_number = int(key.split("/")[-1].split("_")[1].split(".")[0])
         logging.info(f"Starting Batch Worker for S3 Key: {key}, Run ID: {run_id}")
         
         data_management = DataManagement()
         df, _ = data_management.load_s3_file(bucket, key)
 
+        print(df)
         openfoam_handler = OpenFoamHandler(df)
         simulation_results = openfoam_handler.simulate()
 
@@ -41,6 +42,7 @@ def batch_worker():
 
     except Exception as e:
         logging.error(f"Error in Batch Worker: {e}")
+        raise e
 
 if __name__ == "__main__":
     batch_worker()

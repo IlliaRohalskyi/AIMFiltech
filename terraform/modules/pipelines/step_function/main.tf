@@ -51,56 +51,98 @@ resource "aws_sfn_state_machine" "step_function" {
   name     = "training-pipeline-step-function"
   role_arn = aws_iam_role.step_function_role.arn
 
-  definition = jsonencode({
-    Comment: "State machine to process data in chunks using AWS Batch",
-    StartAt: "SplitData",
-    States: {
-      SplitData: {
-        Type: "Task",
-        Resource: "arn:aws:lambda:${var.aws_region}:${var.aws_account_id}:function:${var.split_data_lambda_name}",
-        ResultPath: "$.split_result",
-        Next: "MapState"
+  definition = <<EOF
+{
+  "Comment": "State machine to process data in chunks using AWS Batch",
+  "StartAt": "ProcessS3Event",
+  "States": {
+    "ProcessS3Event": {
+      "Type": "Pass",
+      "Parameters": {
+        "bucket": "${var.s3_bucket_name}",
+        "key.$": "$.detail.object.key",
+        "version_id.$": "$.detail.object.version-id",
+        "run_id.$": "$$.Execution.Name"
       },
-      MapState: {
-        Type: "Map",
-        ItemsPath: "$.split_result.chunk_keys",
-        Iterator: {
-          StartAt: "SubmitBatchJob",
-          States: {
-            SubmitBatchJob: {
-              Type: "Task",
-              Resource: "arn:aws:states:::batch:submitJob.sync",
-              Parameters: {
-                JobName: var.batch_job_name,
-                JobQueue: var.batch_job_queue_arn,
-                JobDefinition: var.batch_job_definition_arn,
-                ContainerOverrides: {
-                  Environment: [
-                    {
-                      Name: "S3_BUCKET",
-                      Value: var.s3_bucket_name
-                    },
-                    {
-                      Name: "CHUNK_KEY",
-                      Value: "$$.Map.Item.Value"
-                    },
-                    {
-                      Name: "RUN_ID",
-                      Value: "$.split_result.run_id"
-                    },
-                    {
-                      Name: "VERSION_ID",
-                      Value: "$.split_result.version_id"
-                    }
-                  ]
-                }
-              },
-              End: true
-            }
+      "Next": "SplitData"
+    },
+    "SplitData": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:${var.aws_region}:${var.aws_account_id}:function:${var.split_data_lambda_name}",
+      "ResultPath": "$.split_result",
+      "Next": "CheckSplitResults"
+    },
+    "CheckSplitResults": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.split_result.chunk_keys",
+          "IsPresent": true,
+          "Next": "PrepareMapState"
+        }
+      ],
+      "Default": "SplitFailure"
+    },
+    "SplitFailure": {
+      "Type": "Fail",
+      "Error": "NoChunkKeysFound",
+      "Cause": "The SplitData Lambda did not produce any chunk keys to process"
+    },
+    "PrepareMapState": {
+      "Type": "Pass",
+      "Parameters": {
+        "chunk_keys.$": "$.split_result.chunk_keys",
+        "run_id.$": "$.split_result.run_id",
+        "version_id.$": "$.split_result.version_id"
+      },
+      "Next": "MapState"
+    },
+    "MapState": {
+      "Type": "Map",
+      "ItemsPath": "$.chunk_keys",
+      "Parameters": {
+        "chunk_key.$": "$$.Map.Item.Value",
+        "run_id.$": "$.run_id",
+        "version_id.$": "$.version_id"
+      },
+      "Iterator": {
+        "StartAt": "SubmitBatchJob",
+        "States": {
+          "SubmitBatchJob": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::batch:submitJob.sync",
+            "Parameters": {
+              "JobName": "${var.batch_job_name}",
+              "JobQueue": "${var.batch_job_queue_arn}",
+              "JobDefinition": "${var.batch_job_definition_arn}",
+              "ContainerOverrides": {
+                "Environment": [
+                  {
+                    "Name": "S3_BUCKET", 
+                    "Value": "${var.s3_bucket_name}"
+                  },
+                  {
+                    "Name": "S3_KEY",
+                    "Value.$": "$.chunk_key"
+                  },
+                  {
+                    "Name": "RUN_ID",
+                    "Value.$": "$.run_id"
+                  },
+                  {
+                    "Name": "version_id",
+                    "Value.$": "$.version_id"
+                  }
+                ]
+              }
+            },
+            "End": true
           }
-        },
-        End: true
-      }
+        }
+      },
+      "End": true
     }
-  })
+  }
+}
+EOF
 }

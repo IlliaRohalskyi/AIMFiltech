@@ -83,6 +83,7 @@ module "pipelines_batch" {
   depends_on = [module.networking, module.pipelines_storage]
 }
 
+# 7. Pipelines module: Step Function
 module "pipeline_step_function" {
   source            = "./modules/pipelines/step_function"
   aws_account_id = var.aws_account_id
@@ -96,3 +97,11 @@ module "pipeline_step_function" {
   depends_on = [module.pipelines_batch, module.pipelines_lambda]
 }
 
+#8. Pipelines module: Trigger
+module "pipeline_trigger" {
+  source            = "./modules/pipelines/trigger"
+  s3_bucket_name     = module.pipelines_storage.s3_bucket_name
+  step_function_arn = module.pipeline_step_function.step_function_arn
+  aws_region = var.aws_region  
+  depends_on = [module.pipeline_step_function, module.pipelines_storage]
+}

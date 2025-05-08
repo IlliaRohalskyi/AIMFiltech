@@ -117,15 +117,33 @@ resource "aws_iam_role" "execution_role" {
   })
 }
 
+# IAM Role for Job Task (for application permissions)
+resource "aws_iam_role" "job_role" {
+  name = "batch-job-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = "sts:AssumeRole",
+        Effect = "Allow",
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
 # IAM Role Policy Attachment for Job Execution Role
 resource "aws_iam_role_policy_attachment" "execution_role_policy" {
   role       = aws_iam_role.execution_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-
-resource "aws_iam_policy" "execution_role_s3_policy" {
-  name   = "execution-role-s3-policy"
+# S3 Policy for Job Role
+resource "aws_iam_policy" "job_s3_policy" {
+  name   = "job-s3-policy"
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -172,10 +190,12 @@ resource "aws_iam_role_policy_attachment" "execution_role_ecr_policy_attachment"
   policy_arn = aws_iam_policy.execution_role_ecr_policy.arn
 }
 
-resource "aws_iam_role_policy_attachment" "execution_role_s3_policy_attachment" {
-  role       = aws_iam_role.execution_role.name
-  policy_arn = aws_iam_policy.execution_role_s3_policy.arn
+# Attach S3 policy to Job Role
+resource "aws_iam_role_policy_attachment" "job_role_s3_policy_attachment" {
+  role       = aws_iam_role.job_role.name
+  policy_arn = aws_iam_policy.job_s3_policy.arn
 }
+
 # Batch Job Definition
 resource "aws_batch_job_definition" "job_definition" {
   name          = "training-transform-job-definition"
@@ -198,6 +218,7 @@ resource "aws_batch_job_definition" "job_definition" {
       }
     ]
     command      = ["bash", "-c", "python3 app/src/batch_jobs/batch_worker.py"]
-    executionRoleArn = aws_iam_role.execution_role.arn
+    executionRoleArn = aws_iam_role.execution_role.arn,
+    jobRoleArn = aws_iam_role.job_role.arn
   })
 }

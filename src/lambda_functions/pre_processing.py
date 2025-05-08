@@ -23,18 +23,20 @@ def lambda_handler(event, context):
 
     num_chunks = math.ceil(len(transformed_data) / chunk_size)
     chunk_keys = []
+    indexes = []
     for i in range(num_chunks):
         chunk = transformed_data.iloc[i*chunk_size : (i+1)*chunk_size]
-        chunk_path = f"/tmp/chunk_{i+1:03d}.csv"
-        chunk.to_csv(chunk_path, index=False)
+        chunk_path = f"/tmp/chunk_{i+1:03d}.xlsx"
+        chunk.to_excel(chunk_path, index=False)
 
-        chunk_s3_key = f"splits/{run_id}/chunk_{i+1:03d}.csv"
+        chunk_s3_key = f"splits/{run_id}/chunk_{i+1:03d}.xlsx"
         data_management.upload_excel(
             chunk_path,
             bucket_name=os.environ["S3_BUCKET"],
             object_name=chunk_s3_key,
             version_id=version_id
         )
+        indexes.append(i+1)
         chunk_keys.append(chunk_s3_key)
 
     return {

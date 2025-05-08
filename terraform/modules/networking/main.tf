@@ -178,38 +178,6 @@ resource "aws_security_group" "batch_sg" {
   }
 }
 
-# VPC Endpoint for ECR API
-resource "aws_vpc_endpoint" "ecr_api" {
-  vpc_id            = aws_vpc.vpc.id
-  service_name      = "com.amazonaws.${var.aws_region}.ecr.api"
-  vpc_endpoint_type = "Interface"
-  subnet_ids        = [
-    aws_subnet.private_subnet_a.id,
-    aws_subnet.private_subnet_b.id
-  ]
-  security_group_ids = [aws_security_group.batch_sg.id]
-
-  tags = {
-    Name = "ECR API Endpoint"
-  }
-}
-
-# VPC Endpoint for ECR Docker Registry
-resource "aws_vpc_endpoint" "ecr_dkr" {
-  vpc_id            = aws_vpc.vpc.id
-  service_name      = "com.amazonaws.${var.aws_region}.ecr.dkr"
-  vpc_endpoint_type = "Interface"
-  subnet_ids        = [
-    aws_subnet.private_subnet_a.id,
-    aws_subnet.private_subnet_b.id
-  ]
-  security_group_ids = [aws_security_group.batch_sg.id]
-
-  tags = {
-    Name = "ECR Docker Registry Endpoint"
-  }
-}
-
 resource "aws_security_group_rule" "allow_https_from_private_subnets" {
   type              = "ingress"
   from_port         = 443
@@ -217,4 +185,26 @@ resource "aws_security_group_rule" "allow_https_from_private_subnets" {
   protocol          = "tcp"
   cidr_blocks       = ["10.0.0.0/16"] 
   security_group_id = aws_security_group.batch_sg.id
+}
+
+# Create an Elastic IP for the NAT Gateway
+resource "aws_eip" "nat_eip" {
+  domain = "vpc"
+}
+
+# Create a NAT Gateway in the public subnet
+resource "aws_nat_gateway" "nat_gateway" {
+  allocation_id = aws_eip.nat_eip.id
+  subnet_id     = aws_subnet.public_subnet.id
+  
+  tags = {
+    Name = "MLflow NAT Gateway"
+  }
+}
+
+# Add route to the private route table
+resource "aws_route" "private_nat_route" {
+  route_table_id         = aws_route_table.mlflow_private_rt.id
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = aws_nat_gateway.nat_gateway.id
 }
