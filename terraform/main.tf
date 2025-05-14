@@ -90,6 +90,7 @@ module "pipeline_step_function" {
   aws_region = var.aws_region
   s3_bucket_name     = module.pipelines_storage.s3_bucket_name
   split_data_lambda_name = module.pipelines_lambda.lambda_name
+  post_process_lambda_name = module.pipelines_lambda.post_process_lambda_name
   batch_job_queue_arn = module.pipelines_batch.batch_job_queue_arn
   batch_job_definition_arn = module.pipelines_batch.batch_job_definition_arn
   batch_job_name = module.pipelines_batch.batch_job_name

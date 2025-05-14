@@ -68,7 +68,7 @@ class OpenFoamHandler:  # pylint: disable=R0903
 
         return final_df
 
-    def _process_variant( # pylint: disable=R0914
+    def _process_variant(  # pylint: disable=R0914
         self, index, row, main_params_dict, output_dict
     ) -> dict:
         """

@@ -46,7 +46,6 @@ resource "aws_iam_role_policy_attachment" "step_function_policy_attachment" {
   policy_arn = aws_iam_policy.step_function_policy.arn
 }
 
-# Step Function
 resource "aws_sfn_state_machine" "step_function" {
   name     = "training-pipeline-step-function"
   role_arn = aws_iam_role.step_function_role.arn
@@ -78,7 +77,7 @@ resource "aws_sfn_state_machine" "step_function" {
         {
           "Variable": "$.split_result.chunk_keys",
           "IsPresent": true,
-          "Next": "PrepareMapState"
+          "Next": "MapState"
         }
       ],
       "Default": "SplitFailure"
@@ -88,22 +87,14 @@ resource "aws_sfn_state_machine" "step_function" {
       "Error": "NoChunkKeysFound",
       "Cause": "The SplitData Lambda did not produce any chunk keys to process"
     },
-    "PrepareMapState": {
-      "Type": "Pass",
-      "Parameters": {
-        "chunk_keys.$": "$.split_result.chunk_keys",
-        "run_id.$": "$.split_result.run_id",
-        "version_id.$": "$.split_result.version_id"
-      },
-      "Next": "MapState"
-    },
     "MapState": {
       "Type": "Map",
-      "ItemsPath": "$.chunk_keys",
+      "ItemsPath": "$.split_result.chunk_keys",
+      "ResultPath": "$.batch_results",
       "Parameters": {
         "chunk_key.$": "$$.Map.Item.Value",
-        "run_id.$": "$.run_id",
-        "version_id.$": "$.version_id"
+        "run_id.$": "$.split_result.run_id",
+        "version_id.$": "$.split_result.version_id"
       },
       "Iterator": {
         "StartAt": "SubmitBatchJob",
@@ -136,9 +127,20 @@ resource "aws_sfn_state_machine" "step_function" {
                 ]
               }
             },
+            "ResultPath": "$.batch_result",
             "End": true
           }
         }
+      },
+      "Next": "CombineResults"
+    },
+    "CombineResults": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:${var.aws_region}:${var.aws_account_id}:function:${var.post_process_lambda_name}",
+      "Parameters": {
+        "bucket": "${var.s3_bucket_name}",
+        "run_id.$": "$.split_result.run_id",
+        "version_id.$": "$.split_result.version_id"
       },
       "End": true
     }

@@ -14,14 +14,14 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Build Docker image
+    - name: Build OpenFOAM Docker image
       run: |
-        docker build -t ci_cd .
+        docker build -t openfoam_ci_cd -f Dockerfile.openfoam .
 
     - name: Run pytest in Docker container
       run: |
-        docker run --rm -v ${{ github.workspace }}:/root/app ci_cd pytest app/test
+        docker run --rm -v ${{ github.workspace }}:/root/app openfoam_ci_cd pytest app/test
 
     - name: Run pylint in Docker container
       run: |
-        docker run --rm -v ${{ github.workspace }}:/root/app ci_cd pylint app/src app/test
+        docker run --rm -v ${{ github.workspace }}:/root/app openfoam_ci_cd pylint app/src app/test

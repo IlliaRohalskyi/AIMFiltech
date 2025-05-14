@@ -13,14 +13,19 @@ resource "aws_s3_object" "raw_folder" {
   key    = "raw/"
 }
 
-resource "aws_s3_object" "transform_folder" {
-  bucket = aws_s3_bucket.aimfiltech_bucket.id
-  key    = "processed/"
-}
-
-resource "aws_s3_object" "model_folder" {
+resource "aws_s3_object" "splits_folder" {
   bucket = aws_s3_bucket.aimfiltech_bucket.id
   key    = "splits/"
+}
+
+resource "aws_s3_object" "simulated_folder"{
+  bucket = aws_s3_bucket.aimfiltech_bucket.id
+  key    = "simulated/"
+}
+
+resource "aws_s3_object" "combined_folder"{
+  bucket = aws_s3_bucket.aimfiltech_bucket.id
+  key    = "combined/"
 }
 
 resource "aws_s3_bucket_versioning" "enable_aimfiltech_versioning" {

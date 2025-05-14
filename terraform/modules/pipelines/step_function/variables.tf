@@ -32,3 +32,8 @@ variable "batch_job_name" {
   description = "Name of the AWS Batch job"
   type        = string
 }
+
+variable "post_process_lambda_name" {
+  description = "Name of the Lambda function for post-processing data"
+  type        = string
+}
