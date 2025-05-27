@@ -164,7 +164,7 @@ openfoam_case
 data
 =======
 data
-src/notebooks
+src/notebooks/
 terraform/*
 !terraform/*.tf
 !terraform/modules

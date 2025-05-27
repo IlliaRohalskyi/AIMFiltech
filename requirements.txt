@@ -1,5 +1,6 @@
 -e .
 PyFoam
+boto3
 black
 isort
 openpyxl
@@ -12,5 +13,6 @@ pylint
 psycopg2-binary
 umap-learn
 scikit-learn
+shap
 sagemaker
 optuna
