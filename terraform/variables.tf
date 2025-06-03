@@ -55,3 +55,21 @@ variable "aws_account_id" {
   description = "AWS account ID"
   sensitive = true
 }
+
+variable "mlflow_basic_auth_user" {
+  type = string
+  description = "Username for MLflow basic authentication"
+  sensitive = true
+}
+
+variable "mlflow_basic_auth_password" {
+  type = string
+  description = "Password for MLflow basic authentication"
+  sensitive = true
+}
+
+variable "ip_address" {
+  type = string
+  description = "IP address for the MLflow instance"
+  sensitive = true
+}

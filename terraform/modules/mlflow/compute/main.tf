@@ -78,7 +78,7 @@ resource "aws_instance" "mlflow_ec2" {
 
               # Update system and install dependencies
               sudo apt update
-              sudo apt install -y python3-pip nginx software-properties-common
+              sudo apt install -y python3-pip nginx software-properties-common apache2-utils
 
               # Install Python packages required for MLflow
               pip3 install werkzeug==2.2.3 flask==2.2.3 click==8.1.3
@@ -123,7 +123,9 @@ resource "aws_instance" "mlflow_ec2" {
                   -out /etc/nginx/ssl/selfsigned.crt \
                   -subj "/CN=$(curl -s http://169.254.169.254/latest/meta-data/public-hostname)"
 
-              # Configure NGINX to use SSL with self-signed certificate
+              sudo htpasswd -bc /etc/nginx/.htpasswd "${var.mlflow_basic_auth_user}" "${var.mlflow_basic_auth_password}"
+
+              # Configure NGINX to use SSL with self-signed certificate and basic auth
               cat <<EOT > /etc/nginx/sites-available/mlflow
               server {
                   listen 443 ssl;
@@ -133,6 +135,8 @@ resource "aws_instance" "mlflow_ec2" {
                   ssl_certificate_key /etc/nginx/ssl/selfsigned.key;
 
                   location / {
+                      auth_basic "Restricted";
+                      auth_basic_user_file /etc/nginx/.htpasswd;
                       proxy_pass http://127.0.0.1:5000;
                       proxy_set_header Host \$host;
                       proxy_set_header X-Real-IP \$remote_addr;
@@ -143,7 +147,7 @@ resource "aws_instance" "mlflow_ec2" {
               server {
                   listen 80;
                   server_name $(curl -s http://169.254.169.254/latest/meta-data/public-hostname);
-                  
+
                   # Redirect all HTTP traffic to HTTPS
                   return 301 https://\$host\$request_uri;
               }

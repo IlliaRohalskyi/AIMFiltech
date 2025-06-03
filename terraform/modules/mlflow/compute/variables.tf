@@ -31,11 +31,19 @@ variable "s3_bucket_name" {
 variable "mlflow_db_username" {
   description = "Username for the MLflow database"
   type        = string
-  sensitive   = true
 }
 
 variable "mlflow_db_password" {
   description = "Password for the MLflow database"
   type        = string
-  sensitive   = true
+}
+
+variable "mlflow_basic_auth_user" {
+  description = "Username for MLflow basic authentication"
+  type        = string
+}
+
+variable "mlflow_basic_auth_password" {
+  description = "Password for MLflow basic authentication"
+  type        = string
 }

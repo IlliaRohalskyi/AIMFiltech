@@ -24,6 +24,7 @@ resource "aws_budgets_budget" "budget" {
 module "networking" {
   source     = "./modules/networking"
   aws_region = var.aws_region
+  ip_address = var.ip_address
 }
 
 # 2. Storage module: S3 buckets and RDS
@@ -50,6 +51,8 @@ module "mlflow_compute" {
   s3_bucket_name        = module.mlflow_storage.mlflow_bucket_name
   mlflow_db_username    = var.mlflow_db_username
   mlflow_db_password    = var.mlflow_db_password
+  mlflow_basic_auth_user = var.mlflow_basic_auth_user
+  mlflow_basic_auth_password = var.mlflow_basic_auth_password
   depends_on = [module.networking, module.mlflow_storage]
 }
 

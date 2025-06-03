@@ -92,17 +92,11 @@ resource "aws_security_group" "mlflow_ec2_sg" {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "Allow HTTPS traffic to MLflow UI"
-  }
-
-  # Allow SSH access only from trusted IPs
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["37.4.229.184/32"]
-    description = "Allow SSH access from trusted IPs"
+    cidr_blocks = [
+      "10.0.0.0/16",
+      var.ip_address
+      ]
+    description = "Allow HTTPS traffic to MLflow UI from my IPs"
   }
 
   # Allow all outbound traffic
@@ -187,24 +181,50 @@ resource "aws_security_group_rule" "allow_https_from_private_subnets" {
   security_group_id = aws_security_group.batch_sg.id
 }
 
-# Create an Elastic IP for the NAT Gateway
-resource "aws_eip" "nat_eip" {
-  domain = "vpc"
-}
-
-# Create a NAT Gateway in the public subnet
-resource "aws_nat_gateway" "nat_gateway" {
-  allocation_id = aws_eip.nat_eip.id
-  subnet_id     = aws_subnet.public_subnet.id
-  
+#ECR API Endpoint (Interface)
+resource "aws_vpc_endpoint" "ecr_api" {
+  vpc_id            = aws_vpc.vpc.id
+  service_name      = "com.amazonaws.${var.aws_region}.ecr.api"
+  vpc_endpoint_type = "Interface"
+  subnet_ids        = [aws_subnet.private_subnet_a.id, aws_subnet.private_subnet_b.id]
+  security_group_ids = [aws_security_group.batch_sg.id]
+  private_dns_enabled = true
   tags = {
-    Name = "MLflow NAT Gateway"
+    Name = "ECR API Endpoint"
   }
 }
 
-# Add route to the private route table
-resource "aws_route" "private_nat_route" {
-  route_table_id         = aws_route_table.mlflow_private_rt.id
-  destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id         = aws_nat_gateway.nat_gateway.id
+#ECR DKR Endpoint (Interface)
+resource "aws_vpc_endpoint" "ecr_dkr" {
+  vpc_id            = aws_vpc.vpc.id
+  service_name      = "com.amazonaws.${var.aws_region}.ecr.dkr"
+  vpc_endpoint_type = "Interface"
+  subnet_ids        = [aws_subnet.private_subnet_a.id, aws_subnet.private_subnet_b.id]
+  security_group_ids = [aws_security_group.batch_sg.id]
+  private_dns_enabled = true
+  tags = {
+    Name = "ECR DKR Endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = aws_vpc.vpc.id
+  service_name      = "com.amazonaws.${var.aws_region}.s3"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids   = [aws_route_table.mlflow_private_rt.id]
+  tags = {
+    Name = "S3 Gateway Endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "logs" {
+  vpc_id              = aws_vpc.vpc.id
+  service_name        = "com.amazonaws.${var.aws_region}.logs"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = [aws_subnet.private_subnet_a.id, aws_subnet.private_subnet_b.id]
+  security_group_ids  = [aws_security_group.batch_sg.id]
+  private_dns_enabled = true
+  tags = {
+    Name = "CloudWatch Logs Endpoint"
+  }
 }
