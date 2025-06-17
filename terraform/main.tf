@@ -20,14 +20,14 @@ resource "aws_budgets_budget" "budget" {
   time_unit    = "MONTHLY"
 }
 
-# 1. Network module: VPC, subnets, security groups
+#Network module: VPC, subnets, security groups
 module "networking" {
   source     = "./modules/networking"
   aws_region = var.aws_region
   ip_address = var.ip_address
 }
 
-# 2. Storage module: S3 buckets and RDS
+#Storage module: S3 buckets and RDS
 module "mlflow_storage" {
   source             = "./modules/mlflow/storage"
   s3_bucket_name     = var.s3_mlflow_bucket_name
@@ -40,7 +40,7 @@ module "mlflow_storage" {
   depends_on = [module.networking]
 }
 
-# 3. Compute module: EC2, IAM roles, user data
+#Compute module: EC2, IAM roles, user data
 module "mlflow_compute" {
   source                = "./modules/mlflow/compute"
   key_name              = var.key_name
@@ -56,13 +56,13 @@ module "mlflow_compute" {
   depends_on = [module.networking, module.mlflow_storage]
 }
 
-# 4. Pipelines module: S3 bucket for pipelines
+#Pipelines module: S3 bucket for pipelines
 module "pipelines_storage" {
   source             = "./modules/pipelines/storage"
   s3_bucket_name     = var.s3_bucket_name
 }
 
-# 5. Pipelines module: Lambda
+#Pipelines module: Lambda
 module "pipelines_lambda" {
   s3_bucket_name = module.pipelines_storage.s3_bucket_name
   source            = "./modules/pipelines/lambda"
@@ -72,7 +72,7 @@ module "pipelines_lambda" {
   depends_on = [module.pipelines_storage]
 }
 
-#6. Pipelines module: Batch
+#Pipelines module: Batch
 module "pipelines_batch" {
   source            = "./modules/pipelines/batch"
   image_tag         = var.image_tag
@@ -86,7 +86,15 @@ module "pipelines_batch" {
   depends_on = [module.networking, module.pipelines_storage]
 }
 
-# 7. Pipelines module: Step Function
+#Pipelines module: SageMaker
+module "sagemaker" {
+  source = "./modules/pipelines/sagemaker"
+
+  mlflow_basic_auth_user = var.mlflow_basic_auth_user
+  mlflow_basic_auth_password = var.mlflow_basic_auth_password
+}
+
+#Pipelines module: Step Function
 module "pipeline_step_function" {
   source            = "./modules/pipelines/step_function"
   aws_account_id = var.aws_account_id
@@ -101,7 +109,7 @@ module "pipeline_step_function" {
   depends_on = [module.pipelines_batch, module.pipelines_lambda]
 }
 
-#8. Pipelines module: Trigger
+#Pipelines module: Trigger
 module "pipeline_trigger" {
   source            = "./modules/pipelines/trigger"
   s3_bucket_name     = module.pipelines_storage.s3_bucket_name

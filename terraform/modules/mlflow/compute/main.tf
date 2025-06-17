@@ -42,7 +42,7 @@ data "aws_ami" "ubuntu" {
 
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-*-amd64-*"]
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
   }
 
   filter {
@@ -56,12 +56,12 @@ data "aws_ami" "ubuntu" {
 # SSH key pair
 resource "aws_key_pair" "mlflow_key" {
   key_name   = var.key_name
-  public_key = file("~/.ssh/id_rsa.pub") # Replace with your public key path
+  public_key = file("~/.ssh/id_rsa.pub")
 }
 
 resource "aws_instance" "mlflow_ec2" {
   ami                    = data.aws_ami.ubuntu.id
-  instance_type          = var.ec2_instance_type
+  instance_type          = var.ec2_instance_type 
   key_name               = var.key_name
   vpc_security_group_ids = var.vpc_security_group_ids
   subnet_id              = var.subnet_id
@@ -72,6 +72,8 @@ resource "aws_instance" "mlflow_ec2" {
     encrypted = true
   }
 
+  # ... keep everything exactly the same until user_data ...
+
   user_data = <<-EOF
               #!/bin/bash
               set -e
@@ -81,22 +83,23 @@ resource "aws_instance" "mlflow_ec2" {
               sudo apt install -y python3-pip nginx software-properties-common apache2-utils
 
               # Install Python packages required for MLflow
-              pip3 install werkzeug==2.2.3 flask==2.2.3 click==8.1.3
+              pip3 install werkzeug flask click
               pip3 install importlib-metadata>=4.0.0
-              pip3 install mlflow==2.8.0 boto3 psycopg2-binary
+              pip3 install mlflow boto3 psycopg2-binary gunicorn
 
-              # Create a startup script for MLflow
+              # CHANGE 1: Better MLflow startup script with more workers
               cat <<EOT > /home/ubuntu/start_mlflow.sh
               #!/bin/bash
-              mlflow server -h 127.0.0.1 -p 5000 \
-              --backend-store-uri postgresql://${var.mlflow_db_username}:${var.mlflow_db_password}@${var.rds_address}:5432/mlflowdb?sslmode=require \
-              --default-artifact-root s3://${var.s3_bucket_name}
+              mlflow server -h 0.0.0.0 -p 5000 \\
+              --backend-store-uri postgresql://${var.mlflow_db_username}:${var.mlflow_db_password}@${var.rds_address}:5432/mlflowdb?sslmode=require \\
+              --default-artifact-root s3://${var.s3_bucket_name} \\
+              --workers 4
               EOT
 
               chmod +x /home/ubuntu/start_mlflow.sh
               sudo chown ubuntu:ubuntu /home/ubuntu/start_mlflow.sh
 
-              # Configure MLflow to start with the system
+              # CHANGE 2: Better systemd service with restart limits
               cat <<EOT > /etc/systemd/system/mlflow.service
               [Unit]
               Description=MLflow Tracking Server
@@ -107,6 +110,9 @@ resource "aws_instance" "mlflow_ec2" {
               WorkingDirectory=/home/ubuntu
               ExecStart=/home/ubuntu/start_mlflow.sh
               Restart=always
+              RestartSec=10
+              KillMode=mixed
+              TimeoutStopSec=30
 
               [Install]
               WantedBy=multi-user.target
@@ -115,6 +121,9 @@ resource "aws_instance" "mlflow_ec2" {
               sudo systemctl daemon-reload
               sudo systemctl enable mlflow.service
               sudo systemctl start mlflow.service
+
+              # Wait for MLflow to start
+              sleep 15
 
               # Generate self-signed SSL certificate
               sudo mkdir -p /etc/nginx/ssl
@@ -125,14 +134,20 @@ resource "aws_instance" "mlflow_ec2" {
 
               sudo htpasswd -bc /etc/nginx/.htpasswd "${var.mlflow_basic_auth_user}" "${var.mlflow_basic_auth_password}"
 
-              # Configure NGINX to use SSL with self-signed certificate and basic auth
-              cat <<EOT > /etc/nginx/sites-available/mlflow
+              # CHANGE 3: Fixed nginx config (removed escaping issues)
+              sudo tee /etc/nginx/sites-available/mlflow > /dev/null <<EOT
               server {
                   listen 443 ssl;
-                  server_name $(curl -s http://169.254.169.254/latest/meta-data/public-hostname);
+                  server_name $(curl -s http://169.254.169.254/latest/meta-data/public-hostname) $(curl -s http://169.254.169.254/latest/meta-data/local-ipv4);
 
                   ssl_certificate /etc/nginx/ssl/selfsigned.crt;
                   ssl_certificate_key /etc/nginx/ssl/selfsigned.key;
+
+                  # Add timeouts
+                  proxy_connect_timeout 60s;
+                  proxy_send_timeout 60s;
+                  proxy_read_timeout 60s;
+                  client_max_body_size 100M;
 
                   location / {
                       auth_basic "Restricted";
@@ -141,23 +156,26 @@ resource "aws_instance" "mlflow_ec2" {
                       proxy_set_header Host \$host;
                       proxy_set_header X-Real-IP \$remote_addr;
                       proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                      proxy_set_header X-Forwarded-Proto \$scheme;
                   }
               }
 
               server {
                   listen 80;
                   server_name $(curl -s http://169.254.169.254/latest/meta-data/public-hostname);
-
-                  # Redirect all HTTP traffic to HTTPS
                   return 301 https://\$host\$request_uri;
               }
               EOT
 
-              # Update NGINX configuration to fix server_names_hash_bucket_size issue
-              sudo sed -i '/http {/a \\    server_names_hash_bucket_size 128;' /etc/nginx/nginx.conf
+              # Fix nginx global config
+              sudo sed -i '/http {/a \    server_names_hash_bucket_size 128;' /etc/nginx/nginx.conf
 
-              sudo ln -s /etc/nginx/sites-available/mlflow /etc/nginx/sites-enabled/mlflow
-              sudo systemctl restart nginx
+              # Enable site and restart nginx
+              sudo ln -sf /etc/nginx/sites-available/mlflow /etc/nginx/sites-enabled/mlflow
+              sudo rm -f /etc/nginx/sites-enabled/default
+              sudo nginx -t && sudo systemctl restart nginx
+
+              echo "Setup completed successfully"
               EOF
 
   tags = {

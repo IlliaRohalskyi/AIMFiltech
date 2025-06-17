@@ -93,10 +93,19 @@ resource "aws_security_group" "mlflow_ec2_sg" {
     to_port     = 443
     protocol    = "tcp"
     cidr_blocks = [
-      "10.0.0.0/16",
-      var.ip_address
+      var.ip_address,
+      "10.0.2.0/24",
+      "10.0.3.0/24"
       ]
-    description = "Allow HTTPS traffic to MLflow UI from my IPs"
+    description = "Allow HTTP traffic to MLflow UI from IP"
+  }
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.ip_address]
+    description = "Allow SSH from IP"
   }
 
   # Allow all outbound traffic
@@ -164,21 +173,26 @@ resource "aws_security_group" "batch_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  ingress {
-    from_port = 0
-    to_port   = 65535
-    protocol  = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
 }
 
-resource "aws_security_group_rule" "allow_https_from_private_subnets" {
+resource "aws_security_group_rule" "batch_vpc_endpoints_https" {
   type              = "ingress"
   from_port         = 443
   to_port           = 443
   protocol          = "tcp"
-  cidr_blocks       = ["10.0.0.0/16"] 
+  cidr_blocks       = ["10.0.0.0/16"]
   security_group_id = aws_security_group.batch_sg.id
+  description       = "Allow HTTPS for VPC endpoints"
+}
+
+resource "aws_security_group_rule" "batch_self_ingress" {
+  type                     = "ingress"
+  from_port                = 0
+  to_port                  = 65535
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.batch_sg.id
+  security_group_id        = aws_security_group.batch_sg.id
+  description              = "Allow Batch tasks to communicate with each other"
 }
 
 #ECR API Endpoint (Interface)
@@ -226,5 +240,73 @@ resource "aws_vpc_endpoint" "logs" {
   private_dns_enabled = true
   tags = {
     Name = "CloudWatch Logs Endpoint"
+  }
+}
+
+resource "aws_security_group" "sagemaker_sg" {
+  name        = "sagemaker-sg"
+  description = "Security group for SageMaker training jobs"
+  vpc_id      = aws_vpc.vpc.id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow all outbound traffic"
+  }
+
+  tags = {
+    Name = "sagemaker-sg"
+  }
+}
+
+resource "aws_security_group_rule" "sagemaker_self_ingress" {
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.sagemaker_sg.id
+  security_group_id        = aws_security_group.sagemaker_sg.id
+  description              = "Allow SageMaker to connect to VPC endpoints"
+}
+
+resource "aws_security_group_rule" "mlflow_allow_sagemaker" {
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.sagemaker_sg.id
+  security_group_id        = aws_security_group.mlflow_ec2_sg.id
+  description              = "Allow SageMaker to connect to MLflow"
+}
+
+resource "aws_vpc_endpoint" "secretsmanager" {
+  vpc_id              = aws_vpc.vpc.id
+  service_name        = "com.amazonaws.${var.aws_region}.secretsmanager"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = [
+    aws_subnet.private_subnet_a.id,
+    aws_subnet.private_subnet_b.id
+  ]
+  security_group_ids  = [aws_security_group.sagemaker_sg.id]
+  private_dns_enabled = true
+  tags = {
+    Name = "Secrets Manager Endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "sts" {
+  vpc_id              = aws_vpc.vpc.id
+  service_name        = "com.amazonaws.${var.aws_region}.sts"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = [
+    aws_subnet.private_subnet_a.id,
+    aws_subnet.private_subnet_b.id
+  ]
+  security_group_ids  = [aws_security_group.sagemaker_sg.id]
+  private_dns_enabled = true
+  tags = {
+    Name = "STS Endpoint"
   }
 }

@@ -26,6 +26,7 @@ resource "aws_iam_policy" "step_function_policy" {
         Effect: "Allow",
         Action: [
           "lambda:InvokeFunction",
+          "ecs:DescribeClusters",
           "batch:SubmitJob",
           "batch:DescribeJobs",
           "s3:GetObject",

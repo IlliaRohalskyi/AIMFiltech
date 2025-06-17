@@ -1,0 +1,21 @@
+# Set variables
+AWS_REGION=eu-central-1
+AWS_ACCOUNT_ID=961341542251
+REPO_NAME=aimfiltech-sagemaker
+IMAGE_TAG=latest
+
+# 1. Create ECR repository (only run once)
+aws ecr create-repository --repository-name $REPO_NAME --region $AWS_REGION
+
+# 2. Authenticate Docker to ECR
+aws ecr get-login-password --region $AWS_REGION | \
+  docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
+# 3. Build Docker image
+docker build -f Dockerfile.sagemaker -t $REPO_NAME:$IMAGE_TAG .
+
+# 4. Tag the image for ECR
+docker tag $REPO_NAME:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPO_NAME:$IMAGE_TAG
+
+# 5. Push the image to ECR
+docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPO_NAME:$IMAGE_TAG
