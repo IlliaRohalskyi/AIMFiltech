@@ -72,8 +72,6 @@ resource "aws_instance" "mlflow_ec2" {
     encrypted = true
   }
 
-  # ... keep everything exactly the same until user_data ...
-
   user_data = <<-EOF
               #!/bin/bash
               set -e

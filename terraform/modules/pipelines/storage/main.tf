@@ -47,6 +47,13 @@ resource "aws_ecr_repository" "lambda_ecr_repo" {
   image_tag_mutability = "IMMUTABLE"
   force_delete         = true
 }
+
+resource "aws_ecr_repository" "sagemaker_ecr_repo" {
+  name                 = "sagemaker-ecr-repo"
+  image_tag_mutability = "IMMUTABLE"
+  force_delete         = true
+}
+
 resource "aws_ecr_lifecycle_policy" "openfoam_ecr_repo_policy" {
   repository = aws_ecr_repository.openfoam_ecr_repo.name
 
@@ -70,6 +77,27 @@ resource "aws_ecr_lifecycle_policy" "openfoam_ecr_repo_policy" {
 
 resource "aws_ecr_lifecycle_policy" "lambda_ecr_repo_policy" {
   repository = aws_ecr_repository.lambda_ecr_repo.name
+
+  policy = jsonencode({
+    rules = [
+      {
+        rulePriority = 1
+        description = "Retain only 5 most recent images"
+        selection    = {
+          tagStatus = "any"
+          countType = "imageCountMoreThan"
+          countNumber = 5
+        }
+        action       = {
+          type = "expire"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_ecr_lifecycle_policy" "sagemaker_ecr_repo_policy" {
+  repository = aws_ecr_repository.sagemaker_ecr_repo.name
 
   policy = jsonencode({
     rules = [

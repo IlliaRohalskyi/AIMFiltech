@@ -30,10 +30,16 @@ resource "aws_iam_policy" "step_function_policy" {
           "batch:SubmitJob",
           "batch:DescribeJobs",
           "s3:GetObject",
+          "s3:PutObject",
           "events:PutRule",
           "events:PutTargets",
           "events:DeleteRule",
-          "events:RemoveTargets"
+          "events:RemoveTargets",
+          "sagemaker:CreateTrainingJob",
+          "sagemaker:DescribeTrainingJob",
+          "sagemaker:StopTrainingJob",
+          "sagemaker:AddTags",
+          "iam:PassRole"
         ],
         Resource: "*"
       }
@@ -53,7 +59,7 @@ resource "aws_sfn_state_machine" "step_function" {
 
   definition = <<EOF
 {
-  "Comment": "State machine to process data in chunks using AWS Batch",
+  "Comment": "State machine to process data and train ML models using SageMaker",
   "StartAt": "ProcessS3Event",
   "States": {
     "ProcessS3Event": {
@@ -143,6 +149,52 @@ resource "aws_sfn_state_machine" "step_function" {
         "run_id.$": "$.split_result.run_id",
         "version_id.$": "$.split_result.version_id"
       },
+      "ResultPath": "$.combined_data",
+      "Next": "TrainModel"
+    },
+    "TrainModel": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sagemaker:createTrainingJob.sync",
+      "Parameters": {
+        "TrainingJobName.$": "States.Format('training-{}', States.ArrayGetItem(States.StringSplit($$.Execution.Name, '_'), 0))",
+        "RoleArn": "${var.sagemaker_role_arn}",
+        "AlgorithmSpecification": {
+          "TrainingImage": "${var.repository_url}:${var.image_tag}",
+          "TrainingInputMode": "File"
+        },
+        "ResourceConfig": {
+          "InstanceType": "ml.m5.large",
+          "InstanceCount": 1,
+          "VolumeSizeInGB": 30
+        },
+        "InputDataConfig": [
+          {
+            "ChannelName": "train",
+            "DataSource": {
+              "S3DataSource": {
+                "S3Uri.$": "$.combined_data.output_path",
+                "S3DataType": "S3Prefix",
+                "S3DataDistributionType": "FullyReplicated"
+              }
+            },
+            "ContentType": "application/vnd.ms-excel"
+          }
+        ],
+        "OutputDataConfig": {
+          "S3OutputPath": "s3://${var.s3_bucket_name}/model-outputs/"
+        },
+        "Environment": {
+          "MLFLOW_TRACKING_URI": "https://${var.mlflow_private_ip}"
+        },
+        "StoppingCondition": {
+          "MaxRuntimeInSeconds": 7200
+        },
+        "VpcConfig": {
+          "SecurityGroupIds": ["${var.sagemaker_security_group_id}"],
+          "Subnets": ["${var.sagemaker_subnet_id}"]
+        }
+      },
+      "ResultPath": "$.training_result",
       "End": true
     }
   }

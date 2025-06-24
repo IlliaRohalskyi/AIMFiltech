@@ -8,6 +8,7 @@ This module handles the aggregation of simulation results:
 """
 
 import logging
+import os
 from typing import Any, Dict, List
 
 import boto3
@@ -54,7 +55,8 @@ def lambda_handler(event, context) -> Dict[str, Any]:  # pylint: disable=unused-
         local_output_path = f"/tmp/combined_results_{run_id}.xlsx"
         combined_df.to_excel(local_output_path, index=False)
 
-        output_key = f"combined/{run_id}/combined_results.xlsx"
+        s3_prefix = f"combined/{run_id}/"
+        output_key = os.path.join(s3_prefix, "combined_results.xlsx")
         data_management.upload_excel(local_output_path, bucket, output_key, version_id)
         logging.info("Uploaded combined results to %s", output_key)
 
@@ -64,6 +66,7 @@ def lambda_handler(event, context) -> Dict[str, Any]:  # pylint: disable=unused-
             "output_key": output_key,
             "run_id": run_id,
             "files_combined": result_keys,
+            "output_path": f"s3://{bucket}/{s3_prefix}",
         }
 
     except Exception as e:  # pylint: disable=broad-except

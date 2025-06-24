@@ -32,3 +32,8 @@ output "batch_sg_id" {
   description = "The ID of the Batch security group"
   value       = aws_security_group.batch_sg.id
 }
+
+output "sagemaker_security_group_id" {
+  description = "The ID of the SageMaker security group"
+  value       = aws_security_group.sagemaker_sg.id
+}

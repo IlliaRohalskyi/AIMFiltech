@@ -12,3 +12,8 @@ output "lambda_repo_url" {
   description = "ECR repository URL for the Lambda function"
   value       = aws_ecr_repository.lambda_ecr_repo.repository_url
 }
+
+output "sagemaker_repo_url" {
+  description = "ECR repository URL for the SageMaker training job"
+  value       = aws_ecr_repository.sagemaker_ecr_repo.repository_url
+}

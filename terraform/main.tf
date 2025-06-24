@@ -105,6 +105,12 @@ module "pipeline_step_function" {
   batch_job_queue_arn = module.pipelines_batch.batch_job_queue_arn
   batch_job_definition_arn = module.pipelines_batch.batch_job_definition_arn
   batch_job_name = module.pipelines_batch.batch_job_name
+  sagemaker_security_group_id = module.networking.sagemaker_security_group_id
+  sagemaker_subnet_id = module.networking.private_subnet_ids[0]
+  repository_url = module.pipelines_storage.sagemaker_repo_url
+  image_tag = var.image_tag
+  sagemaker_role_arn = module.sagemaker.sagemaker_role_arn
+  mlflow_private_ip = module.mlflow_compute.mlflow_server_private_ip
 
   depends_on = [module.pipelines_batch, module.pipelines_lambda]
 }

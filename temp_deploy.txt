@@ -1,8 +1,8 @@
 # Set variables
 AWS_REGION=eu-central-1
 AWS_ACCOUNT_ID=961341542251
-REPO_NAME=aimfiltech-sagemaker
-IMAGE_TAG=latest
+REPO_NAME=sagemaker-ecr-repo
+IMAGE_TAG=20250624-172826-f72d16a
 
 # 1. Create ECR repository (only run once)
 aws ecr create-repository --repository-name $REPO_NAME --region $AWS_REGION
