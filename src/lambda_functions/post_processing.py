@@ -50,14 +50,14 @@ def lambda_handler(event, context) -> Dict[str, Any]:  # pylint: disable=unused-
             }
 
         data_management = DataManagement()
-        combined_df = combine_excel_files(data_management, bucket, result_keys)
+        combined_df = combine_csv_files(data_management, bucket, result_keys)
 
-        local_output_path = f"/tmp/combined_results_{run_id}.xlsx"
-        combined_df.to_excel(local_output_path, index=False)
+        local_output_path = f"/tmp/combined_results_{run_id}.csv"
+        combined_df.to_csv(local_output_path, index=False)
 
         s3_prefix = f"combined/{run_id}/"
-        output_key = os.path.join(s3_prefix, "combined_results.xlsx")
-        data_management.upload_excel(local_output_path, bucket, output_key, version_id)
+        output_key = os.path.join(s3_prefix, "combined_results.csv")
+        data_management.upload_csv(local_output_path, bucket, output_key, version_id)
         logging.info("Uploaded combined results to %s", output_key)
 
         return {
@@ -71,11 +71,7 @@ def lambda_handler(event, context) -> Dict[str, Any]:  # pylint: disable=unused-
 
     except Exception as e:  # pylint: disable=broad-except
         logging.error("Error in post-processing: %s", str(e), exc_info=True)
-        return {
-            "statusCode": 500,
-            "error": f"Post-processing failed: {str(e)}",
-            "run_id": run_id,
-        }
+        raise
 
 
 def list_simulation_results(bucket: str, run_id: str) -> List[str]:
@@ -101,10 +97,10 @@ def list_simulation_results(bucket: str, run_id: str) -> List[str]:
             return []
 
         result_keys = [
-            obj["Key"] for obj in response["Contents"] if obj["Key"].endswith(".xlsx")
+            obj["Key"] for obj in response["Contents"] if obj["Key"].endswith(".csv")
         ]
 
-        logging.info("Found %d Excel files", len(result_keys))
+        logging.info("Found %d csv files", len(result_keys))
         return result_keys
 
     except Exception as e:
@@ -112,11 +108,11 @@ def list_simulation_results(bucket: str, run_id: str) -> List[str]:
         raise
 
 
-def combine_excel_files(
+def combine_csv_files(
     data_management: DataManagement, bucket: str, file_keys: List[str]
 ) -> pd.DataFrame:
     """
-    Load multiple Excel files and combine them into a single DataFrame.
+    Load multiple csv files and combine them into a single DataFrame.
 
     Args:
         data_management: DataManagement instance

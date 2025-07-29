@@ -78,11 +78,11 @@ def process_file(data_manager, bucket, key, run_id, version_id):
 
     for i in range(num_chunks):
         chunk = transformed_data.iloc[i * chunk_size : (i + 1) * chunk_size]
-        chunk_path = f"/tmp/chunk_{i+1:03d}.xlsx"
-        chunk.to_excel(chunk_path, index=False)
+        chunk_path = f"/tmp/chunk_{i+1:03d}.csv"
+        chunk.to_csv(chunk_path, index=False)
 
-        chunk_s3_key = f"splits/{run_id}/chunk_{i+1:03d}.xlsx"
-        data_manager.upload_excel(
+        chunk_s3_key = f"splits/{run_id}/chunk_{i+1:03d}.csv"
+        data_manager.upload_csv(
             chunk_path,
             bucket_name=bucket,
             object_name=chunk_s3_key,

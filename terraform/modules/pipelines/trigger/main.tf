@@ -6,9 +6,9 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
 }
 
 # EventBridge rule to capture S3 events and trigger Step Function
-resource "aws_cloudwatch_event_rule" "s3_upload_rule" {
-  name        = "s3-raw-upload-rule"
-  description = "Capture S3 object creation events in raw/ prefix"
+resource "aws_cloudwatch_event_rule" "s3_ml_upload_rule" {
+  name        = "s3-ml-upload-rule"
+  description = "Capture S3 object creation events in train/ and predict/ folders"
   
   event_pattern = jsonencode({
     source      = ["aws.s3"],
@@ -18,9 +18,14 @@ resource "aws_cloudwatch_event_rule" "s3_upload_rule" {
         name = [var.s3_bucket_name]
       },
       object = {
-        key = [{
-          prefix = var.prefix
-        }]
+        key = [
+          {
+            prefix = "raw/train/"
+          },
+          {
+            prefix = "raw/predict/"
+          }
+        ]
       }
     }
   })
@@ -28,7 +33,7 @@ resource "aws_cloudwatch_event_rule" "s3_upload_rule" {
 
 # EventBridge target for the rule
 resource "aws_cloudwatch_event_target" "s3_step_function_target" {
-  rule      = aws_cloudwatch_event_rule.s3_upload_rule.name
+  rule      = aws_cloudwatch_event_rule.s3_ml_upload_rule.name
   arn       = var.step_function_arn
   role_arn  = aws_iam_role.eventbridge_role.arn
 }

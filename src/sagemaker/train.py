@@ -1,12 +1,5 @@
+import json
 import os
-os.environ["AWS_REGION"] = "eu-central-1"
-os.environ["AWS_DEFAULT_REGION"] = "eu-central-1"
-os.environ["AWS_STS_REGIONAL_ENDPOINTS"] = "regional"
-os.environ["MLFLOW_TRACKING_INSECURE_TLS"] = "true"
-os.environ["MLFLOW_HTTP_REQUEST_TIMEOUT"] = "60" 
-os.environ["MLFLOW_HTTP_REQUEST_MAX_RETRIES"] = "5"
-os.environ["MLFLOW_HTTP_REQUEST_BACKOFF_FACTOR"] = "2"
-
 import pandas as pd
 import numpy as np
 import mlflow
@@ -19,15 +12,10 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score, confusion_matrix, classification_report
 from sklearn.model_selection import train_test_split, StratifiedKFold
 from dataclasses import dataclass
-import boto3
-import json
-import socket
-import time
 import warnings
 warnings.filterwarnings('ignore')
-
-# Use proper logging
 from src.logger import logging
+from src.components.mlflow_utils import setup_mlflow, load_data_from_sagemaker, ModelPromotion
 
 @dataclass
 class TrainTestData:
@@ -37,157 +25,27 @@ class TrainTestData:
     y_test: np.ndarray
     feature_names: list
 
-class ModelPromotion:
-    """Handles model registration and promotion logic using tags instead of stages"""
-    
-    def __init__(self, model_name="agglomeration-classifier", production_tag="production"):
-        self.model_name = model_name
-        self.production_tag = production_tag
-        self.client = mlflow.MlflowClient()
-    
-    def get_production_model(self):
-        """Get current production model and its metrics using tags"""
-        try:
-            # Search for models with production tag
-            model_versions = self.client.search_model_versions(
-                filter_string=f"name='{self.model_name}' and tag.{self.production_tag}='true'"
-            )
-            
-            if model_versions:
-                # Get the latest production model (highest version number)
-                prod_version = max(model_versions, key=lambda x: int(x.version))
-                
-                # Get production model metrics
-                run = self.client.get_run(prod_version.run_id)
-                prod_f1 = run.data.metrics.get("test_avg_f1", 0.0)
-                logging.info(f"Found production model version {prod_version.version} with F1: {prod_f1}")
-                return prod_version, prod_f1
-            else:
-                logging.info("No production model found")
-                return None, None
-        except Exception as e:
-            logging.warning(f"Error retrieving production model: {e}")
-            return None, None
-    
-    def remove_production_tag_from_all(self):
-        """Remove production tag from all existing models"""
-        try:
-            # Find all models with production tag
-            production_models = self.client.search_model_versions(
-                filter_string=f"name='{self.model_name}' and tag.{self.production_tag}='true'"
-            )
-            
-            for model_version in production_models:
-                logging.info(f"Removing production tag from version {model_version.version}")
-                self.client.delete_model_version_tag(
-                    name=self.model_name,
-                    version=model_version.version,
-                    key=self.production_tag
-                )
-        except Exception as e:
-            logging.warning(f"Error removing production tags: {e}")
-    
-    def promote_to_production(self, model_version, reason):
-        """Promote a model to production by tagging it"""
-        # First remove production tag from all existing models
-        self.remove_production_tag_from_all()
-        
-        # Tag the new model as production
-        self.client.set_model_version_tag(
-            name=self.model_name,
-            version=model_version.version,
-            key=self.production_tag,
-            value="true"
-        )
-        
-        # Add promotion metadata
-        self.client.set_model_version_tag(
-            name=self.model_name,
-            version=model_version.version,
-            key="promotion_reason",
-            value=reason
-        )
-        
-        self.client.set_model_version_tag(
-            name=self.model_name,
-            version=model_version.version,
-            key="promoted_at",
-            value=pd.Timestamp.now().isoformat()
-        )
-        
-        logging.info(f"Promoted model version {model_version.version} to production")
-    
-    def compare_and_promote(self, new_model_uri, new_f1, run_id):
-        """Compare new model with production and handle promotion"""
-        prod_model, prod_f1 = self.get_production_model()
-        
-        # Register the new model first
-        model_version = mlflow.register_model(
-            model_uri=new_model_uri,
-            name=self.model_name
-        )
-        
-        # Add basic tags to the new model
-        self.client.set_model_version_tag(
-            name=self.model_name,
-            version=model_version.version,
-            key="created_at",
-            value=pd.Timestamp.now().isoformat()
-        )
-        
-        self.client.set_model_version_tag(
-            name=self.model_name,
-            version=model_version.version,
-            key="test_f1_score",
-            value=str(new_f1)
-        )
-        
-        logging.info(f"Registered model version {model_version.version}")
-        
-        # Case 1: No production model exists
-        if prod_model is None:
-            reason = "First production model (no existing prod model)"
-            logging.info("No production model exists. Promoting new model to production by default.")
-            self.promote_to_production(model_version, reason)
-            return True, reason
-        
-        # Case 2: Production model exists - compare performance
-        try:
-            # Use the correct URI format for loading production model by version
-            prod_model_uri = f"models:/{self.model_name}/{prod_model.version}"
-            logging.info(f"Attempting to load production model from: {prod_model_uri}")
-            
-            prod_model_loaded = mlflow.sklearn.load_model(model_uri=prod_model_uri)
-            logging.info("Successfully loaded production model for comparison")
-            
-            # If we can load it successfully, compare F1 scores
-            if new_f1 >= prod_f1:
-                reason = f"F1 improved: {prod_f1:.4f} -> {new_f1:.4f}"
-                logging.info(f"New model F1 ({new_f1:.4f}) >= Production F1 ({prod_f1:.4f}). Promoting to production.")
-                self.promote_to_production(model_version, reason)
-                return True, f"Promoted ({reason})"
-            else:
-                reason = f"F1 not improved: {prod_f1:.4f} -> {new_f1:.4f}"
-                logging.info(f"New model F1 ({new_f1:.4f}) < Production F1 ({prod_f1:.4f}). Not promoting.")
-                
-                # Tag as candidate but not production
-                self.client.set_model_version_tag(
-                    name=self.model_name,
-                    version=model_version.version,
-                    key="candidate",
-                    value="true"
-                )
-                
-                return False, f"Not promoted ({reason})"
-                
-        except Exception as e:
-            # Case 3: Error loading production model (dimension mismatch, etc.)
-            reason = f"Production model error: {str(e)[:100]}"
-            logging.warning(f"Error loading production model: {e}. Promoting new model regardless of performance.")
-            self.promote_to_production(model_version, reason)
-            return True, f"Promoted ({reason})"
-
 class ModelTrainer:
+    def upload_baseline_stats(self):
+        """Calculate and upload baseline statistics as MLflow artifact"""
+        logging.info("Saving baseline statistics as MLflow artifact...")
+        stats = {
+            'mean': np.mean(self.data.x_train, axis=0).tolist(),
+            'std': np.std(self.data.x_train, axis=0).tolist(),
+            'min': np.min(self.data.x_train, axis=0).tolist(),
+            'max': np.max(self.data.x_train, axis=0).tolist(),
+            'shape': list(self.data.x_train.shape),
+            'feature_names': self.data.feature_names,
+            'timestamp': pd.Timestamp.now().isoformat()
+        }
+
+        os.makedirs("artifacts", exist_ok=True)
+        stats_path = "artifacts/baseline_stats.json"
+        with open(stats_path, "w") as f:
+            json.dump(stats, f, indent=2)
+
+        mlflow.log_artifact(stats_path)
+
     def __init__(self, data: TrainTestData):
         logging.info("Initializing ModelTrainer...")
         self.data = data
@@ -362,17 +220,9 @@ class ModelTrainer:
         return metrics
 
     def train_and_log(self):
-        logging.info("Fetching MLflow credentials...")
-        username, password = get_mlflow_credentials()
-        logging.info("Setting MLflow tracking URI...")
-        os.environ['MLFLOW_TRACKING_USERNAME'] = username
-        os.environ['MLFLOW_TRACKING_PASSWORD'] = password
-        mlflow_uri = os.environ.get('MLFLOW_TRACKING_URI')
-        if not mlflow_uri:
-            raise ValueError("MLFLOW_TRACKING_URI environment variable is not set.")
-        mlflow.set_tracking_uri(mlflow_uri)
-        logging.info(f"MLflow tracking URI set to: {mlflow_uri}")
-        
+        logging.info("Setting up MLflow...")
+        setup_mlflow()
+                
         # Initialize model promotion handler
         promotion_handler = ModelPromotion()
         
@@ -384,6 +234,9 @@ class ModelTrainer:
             mlflow.log_param("n_features", len(self.data.feature_names))
             mlflow.log_param("n_classes", len(self.label_names))
             mlflow.log_param("class_labels", self.label_names)
+            
+            # Save baseline statistics as MLflow artifact for future monitoring
+            self.upload_baseline_stats()
             
             logging.info("Starting Optuna study...")
             study = optuna.create_study(direction="maximize")
@@ -428,7 +281,6 @@ class ModelTrainer:
                 model, 
                 "model",
                 signature=signature,
-                input_example=self.data.x_train[:5]
             )
             
             # Handle model promotion
@@ -448,8 +300,7 @@ class ModelTrainer:
 
 def load_data():
     logging.info("Loading data...")
-    df = pd.read_excel("/opt/ml/input/data/train/combined_results.xlsx")
-    logging.info(f"Loaded data with shape: {df.shape}")
+    df = load_data_from_sagemaker()
     
     y = df["Agglomeration class"].values
     X = df.drop(columns=["Agglomeration class"]).values
@@ -465,19 +316,8 @@ def load_data():
     logging.info(f"Train set: {x_train.shape}, Test set: {x_test.shape}")
     return TrainTestData(x_train, x_test, y_train, y_test, feature_names)
 
-def get_mlflow_credentials(secret_name="mlflow-basic-auth", region_name="eu-central-1"):
-    logging.info(f"Retrieving secret '{secret_name}' from Secrets Manager...")
-    session = boto3.session.Session()
-    client = session.client(service_name="secretsmanager", region_name=region_name)
-    get_secret_value_response = client.get_secret_value(SecretId=secret_name)
-    secret = get_secret_value_response["SecretString"]
-    secret_dict = json.loads(secret)
-    logging.info("Secret retrieved successfully.")
-    return secret_dict["username"], secret_dict["password"]
-
-if __name__ == "__main__":
-    mlflow.config.enable_async_logging()
-    
+def run_training():
+    """Main training function to be called by __main__.py"""    
     logging.info("=== Starting training process ===")
     
     try:
@@ -488,3 +328,6 @@ if __name__ == "__main__":
     except Exception as e:
         logging.error(f"Training failed with error: {e}")
         raise
+
+if __name__ == "__main__":
+    run_training()

@@ -64,12 +64,15 @@ module "pipelines_storage" {
 
 #Pipelines module: Lambda
 module "pipelines_lambda" {
+  mlflow_bucket_name = module.mlflow_storage.mlflow_bucket_name
   s3_bucket_name = module.pipelines_storage.s3_bucket_name
   source            = "./modules/pipelines/lambda"
   image_tag         = var.image_tag
   repository_url = module.pipelines_storage.lambda_repo_url
+  monitoring_lambda_subnet_id = module.networking.private_subnet_ids[0]
+  monitoring_lambda_security_group_id = module.networking.monitor_lambda_sg
 
-  depends_on = [module.pipelines_storage]
+  depends_on = [module.mlflow_storage, module.pipelines_storage]
 }
 
 #Pipelines module: Batch
@@ -92,6 +95,14 @@ module "sagemaker" {
 
   mlflow_basic_auth_user = var.mlflow_basic_auth_user
   mlflow_basic_auth_password = var.mlflow_basic_auth_password
+  repository_url = module.pipelines_storage.sagemaker_repo_url
+  image_tag = var.image_tag
+  sagemaker_security_group_id = module.networking.sagemaker_security_group_id
+  sagemaker_subnet_id = module.networking.private_subnet_ids[0]
+}
+
+module "aws_sns_topic" {
+  source = "./modules/pipelines/sns"
 }
 
 #Pipelines module: Step Function
@@ -102,6 +113,7 @@ module "pipeline_step_function" {
   s3_bucket_name     = module.pipelines_storage.s3_bucket_name
   split_data_lambda_name = module.pipelines_lambda.lambda_name
   post_process_lambda_name = module.pipelines_lambda.post_process_lambda_name
+  monitoring_lambda_name = module.pipelines_lambda.monitoring_lambda_name
   batch_job_queue_arn = module.pipelines_batch.batch_job_queue_arn
   batch_job_definition_arn = module.pipelines_batch.batch_job_definition_arn
   batch_job_name = module.pipelines_batch.batch_job_name
@@ -110,9 +122,11 @@ module "pipeline_step_function" {
   repository_url = module.pipelines_storage.sagemaker_repo_url
   image_tag = var.image_tag
   sagemaker_role_arn = module.sagemaker.sagemaker_role_arn
+  sagemaker_model_name = module.sagemaker.sagemaker_model_name
   mlflow_private_ip = module.mlflow_compute.mlflow_server_private_ip
+  alert_sns_topic_arn = module.aws_sns_topic.sns_topic_arn
 
-  depends_on = [module.pipelines_batch, module.pipelines_lambda]
+  depends_on = [module.pipelines_batch, module.pipelines_lambda, module.aws_sns_topic, module.sagemaker]
 }
 
 #Pipelines module: Trigger

@@ -1,5 +1,6 @@
 FROM opencfd/openfoam-default:2312
 
+# Install Python and Pillow build dependencies
 RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-setuptools \
@@ -7,6 +8,11 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     curl \
     wget \
+    build-essential \
+    zlib1g-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libfreetype6-dev \
     && rm -rf /var/lib/apt/lists/*
 
 ENV TZ=Etc/UTC
@@ -15,5 +21,6 @@ WORKDIR /root/app
 COPY . /root/app
 
 RUN python3 -m pip install --no-cache-dir -r requirements.txt
+RUN python3 -m pip install --no-cache-dir .
 
-CMD ["bash", "-c", "python3 app/src/pipelines/training_transform.py"]
+CMD ["bash", "-c", "python3 -m app/src/pipelines/training_transform.py"]

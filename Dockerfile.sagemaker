@@ -1,19 +1,23 @@
 FROM python:3.10-slim
 
-# Set environment variables for Python
-ENV PYTHONUNBUFFERED=TRUE
-ENV PYTHONDONTWRITEBYTECODE=TRUE
+WORKDIR /app
 
-# Install system dependencies (if you need any)
-RUN apt-get update && apt-get install -y build-essential && rm -rf /var/lib/apt/lists/*
+# Install build essentials and image libraries
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    zlib1g-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libfreetype6-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for caching
 COPY requirements.txt .
-COPY setup.py .
+COPY pyproject.toml .
 COPY src/ ./src/
 
-# Install Python dependencies
-RUN pip install --upgrade pip && pip install -r requirements.txt
+RUN pip install --upgrade pip setuptools wheel \
+    && pip install --no-cache-dir -r requirements.txt
 
-# Set entrypoint for SageMaker
-ENTRYPOINT ["python", "-m", "src.sagemaker.train"]
+RUN pip install --no-cache-dir .
+
+ENTRYPOINT ["python", "-m", "src.sagemaker.__main__"]

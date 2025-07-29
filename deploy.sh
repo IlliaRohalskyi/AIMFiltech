@@ -42,17 +42,17 @@ echo "SAGEMAKER_ECR_REPO: $SAGEMAKER_ECR_REPO"
 # 2. Build and push all three images
 echo "🐳 Building and pushing Lambda image..."
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin "$LAMBDA_ECR_REPO"
-docker build -f Dockerfile.lambda -t "$LAMBDA_ECR_REPO:$IMAGE_TAG" .
+docker build --progress=plain -f Dockerfile.lambda -t "$LAMBDA_ECR_REPO:$IMAGE_TAG" .
 docker push "$LAMBDA_ECR_REPO:$IMAGE_TAG"
 
 echo "🐳 Building and pushing OpenFOAM image..."
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin "$OPENFOAM_ECR_REPO"
-docker build -f Dockerfile.openfoam -t "$OPENFOAM_ECR_REPO:$IMAGE_TAG" .
+docker build --progress=plain -f Dockerfile.openfoam -t "$OPENFOAM_ECR_REPO:$IMAGE_TAG" .
 docker push "$OPENFOAM_ECR_REPO:$IMAGE_TAG"
 
 echo "🐳 Building and pushing SageMaker image..."
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin "$SAGEMAKER_ECR_REPO"
-docker build -f Dockerfile.sagemaker -t "$SAGEMAKER_ECR_REPO:$IMAGE_TAG" .
+docker build --progress=plain -f Dockerfile.sagemaker -t "$SAGEMAKER_ECR_REPO:$IMAGE_TAG" .
 docker push "$SAGEMAKER_ECR_REPO:$IMAGE_TAG"
 
 echo ""

@@ -98,6 +98,13 @@ resource "aws_iam_policy" "sagemaker_iam_policy" {
           "sagemaker:UpdateTrainingJob",
         ],
         Resource = "*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "sns:Publish"
+        ],
+        Resource = "*"
       }
     ]
   })
@@ -107,4 +114,25 @@ resource "aws_iam_policy" "sagemaker_iam_policy" {
 resource "aws_iam_role_policy_attachment" "sagemaker_secrets_policy_attach" {
   role       = aws_iam_role.sagemaker_execution_role.name
   policy_arn = aws_iam_policy.sagemaker_iam_policy.arn
+}
+
+# SageMaker Model for Batch Transform (empty model - loads from MLflow at runtime)
+resource "aws_sagemaker_model" "inference_model" {
+  name               = "aimfiltech-inference-model"
+  execution_role_arn = aws_iam_role.sagemaker_execution_role.arn
+
+  primary_container {
+    image = "${var.repository_url}:${var.image_tag}"
+    
+    environment = {
+      SAGEMAKER_PROGRAM = "predict"
+    }
+  }
+
+  vpc_config {
+    security_group_ids = [var.sagemaker_security_group_id]
+    subnets           = [var.sagemaker_subnet_id]
+  }
+
+  depends_on = [aws_iam_role_policy_attachment.sagemaker_secrets_policy_attach]
 }

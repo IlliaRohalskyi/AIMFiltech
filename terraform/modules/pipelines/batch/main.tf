@@ -217,7 +217,7 @@ resource "aws_batch_job_definition" "job_definition" {
         value = "512"
       }
     ]
-    command      = ["bash", "-c", "python3 app/src/batch_jobs/batch_worker.py"]
+    command      = ["bash", "-c", "cd app && python3 -m src.batch_jobs.batch_worker"]
     executionRoleArn = aws_iam_role.execution_role.arn,
     jobRoleArn = aws_iam_role.job_role.arn
   })

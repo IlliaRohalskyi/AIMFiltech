@@ -82,14 +82,14 @@ class DataManagement:
 
         return df, version_id
 
-    def upload_excel(
+    def upload_csv(
         self, file_path: str, bucket_name: str, object_name: str, version_id: str
     ) -> None:
         """
-        Uploads an Excel file to an S3 bucket and tags it with the raw data version ID.
+        Uploads a CSV file to an S3 bucket and tags it with the raw data version ID.
 
         Args:
-            file_path (str): The path to the Excel file.
+            file_path (str): The path to the csv file.
             bucket_name (str): The name of the S3 bucket.
             object_name (str): The name of the object in S3.
             version_id (str): The version ID of the raw data to be used as a tag.

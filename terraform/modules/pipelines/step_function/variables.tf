@@ -67,3 +67,19 @@ variable "mlflow_private_ip" {
     description = "Private IP address of the MLflow server"
     type        = string
 }
+
+variable "alert_sns_topic_arn" {
+  description = "ARN of the SNS topic for monitoring alerts"
+  type        = string
+  default     = ""
+}
+
+variable "sagemaker_model_name" {
+  description = "Name of the SageMaker model for Batch Transform"
+  type        = string
+}
+
+variable "monitoring_lambda_name" {
+  description = "Name of the Lambda function for monitoring predictions"
+  type        = string
+}

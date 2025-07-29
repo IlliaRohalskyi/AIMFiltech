@@ -1,11 +1,16 @@
 FROM public.ecr.aws/lambda/python:3.10
 
+RUN yum update -y && \
+    yum install -y gcc gcc-c++ zlib-devel libjpeg-devel libpng-devel freetype-devel && \
+    yum clean all
+
 WORKDIR ${LAMBDA_TASK_ROOT}
 
 COPY . ${LAMBDA_TASK_ROOT}
 
 RUN pip install --upgrade pip setuptools wheel
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --prefer-binary -r requirements.txt
+RUN pip install --no-cache-dir .
 
 CMD ["src.lambda_functions.pre_processing.lambda_handler"]

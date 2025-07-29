@@ -44,11 +44,11 @@ def batch_worker():
         openfoam_handler = OpenFoamHandler(df)
         simulation_results = openfoam_handler.simulate()
 
-        output_path = f"/tmp/simulation_result_{run_id}_job_{job_number}.xlsx"
-        simulation_results.to_excel(output_path, index=False)
+        output_path = f"/tmp/simulation_result_{run_id}_job_{job_number}.csv"
+        simulation_results.to_csv(output_path, index=False)
 
-        result_key = f"simulated/{run_id}/job_{job_number}.xlsx"
-        data_management.upload_excel(output_path, bucket, result_key, version_id)
+        result_key = f"simulated/{run_id}/job_{job_number}.csv"
+        data_management.upload_csv(output_path, bucket, result_key, version_id)
 
         logging.info(
             f"Batch Worker completed successfully. Results saved to {result_key}"

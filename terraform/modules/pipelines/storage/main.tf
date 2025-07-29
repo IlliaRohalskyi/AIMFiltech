@@ -8,9 +8,14 @@ resource "aws_s3_bucket" "aimfiltech_bucket" {
   force_destroy = true
 }
 
-resource "aws_s3_object" "raw_folder" {
+resource "aws_s3_object" "train_folder" {
   bucket = aws_s3_bucket.aimfiltech_bucket.id
-  key    = "raw/"
+  key    = "raw/train/"
+}
+
+resource "aws_s3_object" "predict_folder" {
+  bucket = aws_s3_bucket.aimfiltech_bucket.id
+  key    = "raw/predict/"
 }
 
 resource "aws_s3_object" "splits_folder" {

@@ -289,7 +289,7 @@ resource "aws_vpc_endpoint" "secretsmanager" {
     aws_subnet.private_subnet_a.id,
     aws_subnet.private_subnet_b.id
   ]
-  security_group_ids  = [aws_security_group.sagemaker_sg.id]
+  security_group_ids  = [aws_security_group.sagemaker_sg.id, aws_security_group.monitor_lambda_sg.id]
   private_dns_enabled = true
   tags = {
     Name = "Secrets Manager Endpoint"
@@ -308,5 +308,47 @@ resource "aws_vpc_endpoint" "sts" {
   private_dns_enabled = true
   tags = {
     Name = "STS Endpoint"
+  }
+}
+
+resource "aws_security_group" "monitor_lambda_sg" {
+  name        = "monitor-lambda-sg"
+  description = "Security group for monitoring Lambda function"
+  vpc_id      = aws_vpc.vpc.id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow all outbound traffic"
+  }
+
+  tags = {
+    Name = "monitor-lambda-sg"
+  }
+}
+
+resource "aws_security_group_rule" "monitor_lambda_self_ingress" {
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.monitor_lambda_sg.id
+  security_group_id        = aws_security_group.monitor_lambda_sg.id
+  description              = "Allow Monitor Lambda to connect to VPC endpoints"
+}
+
+resource "aws_vpc_endpoint" "sns" {
+  vpc_id            = aws_vpc.vpc.id
+  service_name      = "com.amazonaws.${var.aws_region}.sns"
+  vpc_endpoint_type = "Interface"
+  subnet_ids        = [aws_subnet.private_subnet_a.id, aws_subnet.private_subnet_b.id]
+  security_group_ids = [aws_security_group.monitor_lambda_sg.id] 
+  
+  private_dns_enabled = true
+
+  tags = {
+    Name = "SNS Interface Endpoint"
   }
 }
