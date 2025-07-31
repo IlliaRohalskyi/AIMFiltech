@@ -15,6 +15,7 @@ resource "aws_iam_role" "step_function_role" {
   })
 }
 
+
 resource "aws_iam_policy" "step_function_policy" {
   name   = "step-function-policy"
   policy = jsonencode({
@@ -49,10 +50,12 @@ resource "aws_iam_policy" "step_function_policy" {
   })
 }
 
+
 resource "aws_iam_role_policy_attachment" "step_function_policy_attachment" {
   role       = aws_iam_role.step_function_role.name
   policy_arn = aws_iam_policy.step_function_policy.arn
 }
+
 
 resource "aws_sfn_state_machine" "step_function" {
   name     = "training-prediction-pipeline-step-function"
@@ -267,9 +270,9 @@ resource "aws_sfn_state_machine" "step_function" {
           "TrainingInputMode": "File"
         },
         "ResourceConfig": {
-          "InstanceType": "ml.m5.large",
+          "InstanceType": "ml.t3.large",
           "InstanceCount": 1,
-          "VolumeSizeInGB": 30
+          "VolumeSizeInGB": 5
         },
         "InputDataConfig": [
           {
@@ -342,7 +345,7 @@ resource "aws_sfn_state_machine" "step_function" {
           "S3OutputPath.$": "States.Format('s3://{}/prediction-outputs/{}', '${var.s3_bucket_name}', $.split_result.run_id)"
         },
         "TransformResources": {
-          "InstanceType": "ml.m5.large",
+          "InstanceType": "ml.c7i.large",
           "InstanceCount": 1
         },
         "Environment": {
