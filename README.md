@@ -6,8 +6,6 @@
 
 **AIMFiltech** enables smart, AI-driven filtration by integrating sensor, IoT, CFD, and ML technologies in a scalable, secure AWS environment to support sustainable circular economy goals in industrial wastewater management.
 
-
-
 - **Problem:** Industrial filtration processes lack real-time monitoring and predictive control, making them inefficient and costly, especially under tight environmental regulations.  
 - **Solution:** Automate CFD data generation (OpenFOAM) and ML modeling to predict filtration performance, enable data-driven process control, and reduce pollutant emissions.  
 - **Architecture:** AWS-native cloud deployment with end-to-end automation (preprocessing → simulation → modeling → monitoring), reproducible by design.
@@ -16,7 +14,7 @@
 
 Below is a high-level AWS architecture diagram illustrating the AIMFiltech pipeline:
 
-![AIMFiltech AWS Architecture](./docs/architecture/aws-architecture-diagram.png)
+![AIMFiltech AWS Architecture](./docs/images/aws-architecture-diagram.png)
 
 This architecture covers:
 
@@ -57,11 +55,21 @@ The pipeline tracks key features, monitors performance rigorously, and ensures r
 
 ## 📊 Results & Benchmarks
 
-- F1 score tracked via cross-validation; confusion matrices generated for insights.  
-- AWS Batch parallelizes CFD jobs, reducing runtimes from hours to minutes.  
-- Cost and runtime monitored per phase; models optimized for budget and scalability.  
-- Artifacts include JSON stats from data distributions (for monitoring) and plots visualizing model performance.  
-- Perfect test accuracy flagged as likely due to small holdout sets, not overclaimed.
+The ML pipeline was evaluated using cross-validation and tracked with MLflow. F1 score was the primary metric due to class imbalance in agglomeration categories.
+
+AWS Batch parallelization significantly reduced simulation runtimes—from hours to minutes—while keeping compute costs within a ~$100/month budget cap.
+
+To better interpret classification performance, confusion matrices were generated and tracked as part of experiment artifacts. Below is a sample confusion matrix visualizing prediction performance across agglomeration classes:
+
+![Confusion Matrix](./docs/images/confusion_matrix.png)
+
+> Note: The high accuracy seen in some test runs is likely due to limited test set size and should not be over-interpreted. Monitoring for drift in production is in place.
+
+Other tracked outputs include:
+
+- JSON distributions of key features (for anomaly and drift detection)
+- Training and validation curves
+- Feature importance charts (XGBoost-based)
 
 ## ⚖️ Tradeoffs & Key Decisions
 
@@ -71,10 +79,10 @@ The pipeline tracks key features, monitors performance rigorously, and ensures r
 - Self-hosted MLflow on EC2 saves cost but adds operational overhead compared to managed alternatives.  
 - Development prioritized working, deployable solution over perfect code or full automation.
 
-## 👨💻 Project Team
+## 🧑‍💻 Team
 
-- **Illia Rohalskyi** (Lead ML/Cloud Engineer) [illia.rohalskyi.dev@gmail.com]  
-- **Jan Krzysztoforski** (OpenFOAM/PyFoam developer) [jan.krzysztoforski@pw.edu.pl]
+- **Illia Rohalskyi** (Lead ML/Cloud Engineer) – [illia.rohalskyi.dev@gmail.com]  
+- **Jan Krzysztoforski** (OpenFOAM/PyFoam Developer) – [jan.krzysztoforski@pw.edu.pl]
 
 ## 🌟 Why This Project Stands Out
 
