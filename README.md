@@ -91,4 +91,4 @@ Other tracked outputs include:
 - Deep integration of CFD and ML with solid software engineering.  
 - End-to-end ownership from networking and security to data and modeling.
 
-> **AIMFiltech is a showcase for building industrial-grade ML systems that are orchestrated, reproducible, and engineered for operational scale—perfect for roles requiring technical leadership and practical production ML system design.**
+> **AIMFiltech is a showcase for building industrial-grade ML systems that are orchestrated, reproducible, and engineered for operational scale—perfect for teams requiring practical production ML system design.**
